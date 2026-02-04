@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta name="google-adsense-account" content="ca-pub-1422054760116816">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MSDS Warning Generator</title>
     <link rel="stylesheet" href="style.css">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1422054760116816"
+     crossorigin="anonymous"></script>
 </head>
 <body>
     <div class="container">
@@ -35,6 +38,25 @@
         <div id="warning-container">
             <h2 data-translate-key="generated_warning_title">Generated Warning</h2>
             <div id="warning-output"></div>
+        </div>
+
+        <div id="partnership-form-container" class="form-container">
+            <h2 data-translate-key="partnership_inquiry_title">제휴 문의</h2>
+            <form action="https://formspree.io/f/mojlgyze" method="POST">
+                <label for="name" data-translate-key="form_name_label">이름:</label>
+                <input type="text" id="name" name="name" required>
+
+                <label for="email" data-translate-key="form_email_label">이메일:</label>
+                <input type="email" id="email" name="email" required>
+
+                <label for="company" data-translate-key="form_company_label">회사명:</label>
+                <input type="text" id="company" name="company">
+
+                <label for="message" data-translate-key="form_message_label">문의 내용:</label>
+                <textarea id="message" name="message" rows="5" required></textarea>
+
+                <button type="submit" data-translate-key="form_submit_btn">제출</button>
+            </form>
         </div>
     </div>
     <script src="main.js"></script>
