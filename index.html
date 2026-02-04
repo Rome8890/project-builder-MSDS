@@ -1,14 +1,37 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Hello World</title>
-  <link href='/style.css' rel='stylesheet'>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSDS Warning Generator</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Hello, world!</h1>
-  <button onclick="console.log('hello');">Press me</button>
-  <script defer type="text/javascript" src="/main.js"></script>
+    <div class="container">
+        <h1>MSDS Warning Generator</h1>
+        <div class="form-container">
+            <label for="chemical-name">Chemical Name:</label>
+            <input type="text" id="chemical-name" placeholder="Enter chemical name">
+
+            <label>Hazard Types:</label>
+            <div class="checkbox-group">
+                <input type="checkbox" id="flammable" value="Flammable">
+                <label for="flammable">Flammable</label>
+                <input type="checkbox" id="corrosive" value="Corrosive">
+                <label for="corrosive">Corrosive</label>
+                <input type="checkbox" id="toxic" value="Toxic">
+                <label for="toxic">Toxic</label>
+                <input type="checkbox" id="oxidizer" value="Oxidizer">
+                <label for="oxidizer">Oxidizer</label>
+            </div>
+
+            <button id="generate-btn">Generate Warning</button>
+        </div>
+        <div id="warning-container">
+            <h2>Generated Warning</h2>
+            <div id="warning-output"></div>
+        </div>
+    </div>
+    <script src="main.js"></script>
 </body>
 </html>
