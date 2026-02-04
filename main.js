@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const warningOutput = document.getElementById('warning-output');
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
     const langToggleBtn = document.getElementById('lang-toggle-btn');
+    const downloadPdfBtn = document.getElementById('download-pdf-btn'); // Added
 
     let currentLanguage = 'ko';
 
@@ -19,7 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
             oxidizer_label: '산화성',
             generate_btn: '경고 생성',
             generated_warning_title: '생성된 경고',
-            msds_header: '**물질안전보건자료**'
+            msds_header: '**물질안전보건자료**',
+            download_pdf_btn: 'PDF 다운로드'
         },
         en: {
             main_title: 'MSDS Warning Generator',
@@ -31,7 +33,8 @@ document.addEventListener('DOMContentLoaded', () => {
             oxidizer_label: 'Oxidizer',
             generate_btn: 'Generate Warning',
             generated_warning_title: 'Generated Warning',
-            msds_header: '**MATERIAL SAFETY DATA SHEET**'
+            msds_header: '**MATERIAL SAFETY DATA SHEET**',
+            download_pdf_btn: 'Download PDF'
         }
     };
 
@@ -80,6 +83,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         warningOutput.textContent = warningText;
         warningContainer.style.display = 'block';
+    });
+
+    downloadPdfBtn.addEventListener('click', () => {
+        alert(currentLanguage === 'ko' ? 'PDF 다운로드 기능을 구현하려면 다운로드할 PDF 파일의 경로 또는 생성 방법이 필요합니다.' : 'To implement PDF download, I need the path to the PDF file or instructions on how to generate it.');
+        // Further implementation will go here based on user's clarification
     });
 
     // Initialize with default language
