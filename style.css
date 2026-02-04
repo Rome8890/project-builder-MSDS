@@ -1,127 +1,316 @@
 body {
-    font-family: sans-serif;
-    background-color: #f4f4f9;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* More modern font */
+    background-color: #f4f7f6; /* Lighter background */
     color: #333;
     display: flex;
     justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+    align-items: flex-start; /* Align items to start for scrollable content */
+    min-height: 100vh; /* Ensure full height */
     margin: 0;
+    padding: 20px; /* Add some padding around the content */
+    line-height: 1.6; /* Improved readability */
+    box-sizing: border-box; /* Include padding in element's total width and height */
 }
 
 .container {
-    background: #fff;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    width: 90%;
-    max-width: 600px;
+    background: #ffffff;
+    padding: 2.5rem; /* Increased padding */
+    border-radius: 12px; /* Slightly more rounded corners */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1); /* Stronger shadow */
+    width: 100%; /* Use 100% width within its flex container */
+    max-width: 700px; /* Increased max-width */
     text-align: center;
+    margin: 20px 0; /* Add vertical margin */
 }
 
-h1 {
-    color: #d9534f;
+header {
     margin-bottom: 1.5rem;
 }
 
-.form-container {
+h1 {
+    color: #007bff; /* Primary brand color */
+    margin-bottom: 1rem; /* Reduced margin */
+    font-size: 2.2rem; /* Larger heading */
+}
+
+.intro-text {
+    font-size: 1.05rem;
+    color: #555;
     margin-bottom: 2rem;
+    line-height: 1.7;
+}
+
+.form-section {
+    margin-bottom: 2.5rem; /* More space between sections */
+}
+
+.form-container {
+    margin-bottom: 1.5rem; /* Adjusted margin */
+    padding: 1.5rem; /* Add padding to form container */
+    border: 1px solid #e0e0e0; /* Subtle border */
+    border-radius: 8px; /* Rounded corners for form */
+    background-color: #fdfdfd; /* Slightly different background */
 }
 
 label {
     display: block;
-    margin-bottom: 0.5rem;
-    font-weight: bold;
+    margin-bottom: 0.6rem; /* Increased margin */
+    font-weight: 600; /* Bolder label */
     text-align: left;
+    color: #444;
 }
 
-input[type="text"] {
+input[type="text"],
+input[type="email"],
+textarea {
     width: calc(100% - 20px);
-    padding: 10px;
-    margin-bottom: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    padding: 12px; /* Increased padding */
+    margin-bottom: 1.2rem; /* Increased margin */
+    border: 1px solid #dcdcdc; /* Lighter border */
+    border-radius: 6px; /* Slightly rounded */
+    box-sizing: border-box;
+    transition: border-color 0.3s ease-in-out; /* Smooth transition */
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+textarea:focus {
+    border-color: #007bff; /* Highlight on focus */
+    outline: none; /* Remove default outline */
+}
+
+textarea {
+    resize: vertical;
+    min-height: 80px; /* Minimum height for textarea */
+}
+
+.form-container label {
+    text-align: left;
+    margin-bottom: 0.5rem;
+}
+
+.form-container button[type="submit"] {
+    width: 100%;
+    margin-top: 1.5rem; /* More space above submit button */
+    background-color: #28a745; /* Success green */
+}
+
+.form-container button[type="submit"]:hover {
+    background-color: #218838; /* Darker green on hover */
 }
 
 .checkbox-group {
     display: flex;
-    justify-content: space-around;
-    margin-bottom: 1.5rem;
+    flex-wrap: wrap; /* Allow wrapping */
+    justify-content: center;
+    gap: 15px; /* Gap between checkboxes */
+    margin-bottom: 1.8rem; /* Adjusted margin */
+    padding: 10px; /* Padding for the group */
+    border: 1px solid #eee; /* Light border */
+    border-radius: 5px; /* Rounded corners */
+    background-color: #f9f9f9; /* Light background */
 }
 
-.checkbox-group input {
-    margin-right: 5px;
+.checkbox-group label {
+    margin-bottom: 0; /* Remove bottom margin for labels in group */
+    font-weight: normal; /* Normal weight for checkbox labels */
+    cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+    margin-right: 8px; /* Space between checkbox and label */
+    width: auto; /* Auto width for checkboxes */
 }
 
 button {
-    background-color: #d9534f;
+    background-color: #007bff; /* Primary blue for main buttons */
     color: white;
-    padding: 10px 20px;
+    padding: 12px 25px; /* Increased padding */
     border: none;
-    border-radius: 5px;
+    border-radius: 8px; /* More rounded corners */
     cursor: pointer;
-    font-size: 1rem;
-    transition: background-color 0.3s;
+    font-size: 1.05rem; /* Slightly larger font */
+    transition: background-color 0.3s ease-in-out, transform 0.2s; /* Add transform for subtle animation */
+    margin: 5px; /* Add margin for multiple buttons */
 }
 
 button:hover {
-    background-color: #c9302c;
+    background-color: #0056b3; /* Darker blue on hover */
+    transform: translateY(-2px); /* Subtle lift effect */
 }
 
 #warning-container {
-    margin-top: 2rem;
-    padding: 1.5rem;
-    border: 2px dashed #d9534f;
-    border-radius: 5px;
-    background: #f9f2f2;
-    display: none; /* Initially hidden */
+    margin-top: 2.5rem; /* Increased margin */
+    padding: 2rem; /* Increased padding */
+    border: 2px dashed #007bff; /* Primary color dashed border */
+    border-radius: 10px;
+    background: #e7f0ff; /* Light blue background */
+    display: none;
+    text-align: left; /* Align warning text left */
+}
+
+#warning-container h2 {
+    color: #0056b3; /* Darker blue for warning title */
+    margin-top: 0;
 }
 
 body[data-theme='dark'] {
-    background-color: #222;
-    color: #f4f4f9;
+    background-color: #2c2c2c; /* Darker background */
+    color: #e0e0e0;
 }
 
 body[data-theme='dark'] .container {
-    background: #333;
-    box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
+    background: #3c3c3c;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
 }
 
 body[data-theme='dark'] h1 {
-    color: #ff6b6b;
+    color: #66b3ff; /* Lighter blue for dark theme */
+}
+
+body[data-theme='dark'] .intro-text {
+    color: #bbb;
+}
+
+body[data-theme='dark'] .form-container {
+    background-color: #4a4a4a;
+    border: 1px solid #555;
+}
+
+body[data-theme='dark'] label {
+    color: #e0e0e0;
+}
+
+body[data-theme='dark'] input[type="text"],
+body[data-theme='dark'] input[type="email"],
+body[data-theme='dark'] textarea {
+    background-color: #555;
+    border-color: #666;
+    color: #e0e0e0;
+}
+
+body[data-theme='dark'] input[type="text"]:focus,
+body[data-theme='dark'] input[type="email"]:focus,
+body[data-theme='dark'] textarea:focus {
+    border-color: #66b3ff;
+}
+
+body[data-theme='dark'] .checkbox-group {
+    background-color: #444;
+    border: 1px solid #666;
 }
 
 body[data-theme='dark'] button {
-    background-color: #ff6b6b;
+    background-color: #66b3ff;
 }
 
 body[data-theme='dark'] button:hover {
-    background-color: #e05252;
+    background-color: #4da6ff;
+}
+
+body[data-theme='dark'] .form-container button[type="submit"] {
+    background-color: #4caf50; /* Dark theme success green */
+}
+
+body[data-theme='dark'] .form-container button[type="submit"]:hover {
+    background-color: #388e3c;
 }
 
 body[data-theme='dark'] #warning-container {
-    border: 2px dashed #ff6b6b;
-    background: #444;
+    border: 2px dashed #66b3ff;
+    background: #334455;
+}
+
+body[data-theme='dark'] #warning-container h2 {
+    color: #4da6ff;
 }
 
 body[data-theme='dark'] #warning-output {
-    color: #f4f4f9;
+    color: #e0e0e0;
 }
 
 .toolbar {
     display: flex;
     justify-content: flex-end;
     margin-bottom: 1rem;
+    gap: 10px; /* Space between toolbar buttons */
 }
 
 .toolbar button {
-    margin-left: 0.5rem;
-    padding: 5px 10px;
-    font-size: 0.9rem;
+    margin-left: 0; /* Reset margin from general button style */
+    padding: 8px 15px; /* Adjusted padding */
+    font-size: 0.85rem; /* Slightly smaller font */
+    border-radius: 6px; /* Slightly less rounded */
 }
 
 #warning-output {
-    white-space: pre-wrap; /* Preserve formatting */
-    font-size: 1.1rem;
+    white-space: pre-wrap;
+    font-size: 1.15rem; /* Slightly larger font */
     color: #333;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f0f8ff; /* Light background for output */
+    border: 1px solid #b3d4ff; /* Subtle border */
+    margin-top: 1rem;
+}
+
+footer {
+    margin-top: 2.5rem; /* Space above footer */
+    font-size: 0.9rem;
+    color: #777;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee; /* Separator line */
+}
+
+footer p {
+    margin-bottom: 0.5rem;
+}
+
+footer p:last-child {
+    margin-bottom: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        padding: 1.5rem;
+        margin: 10px 0;
+    }
+
+    h1 {
+        font-size: 1.8rem;
+    }
+
+    .intro-text {
+        font-size: 0.95rem;
+    }
+
+    button {
+        padding: 10px 20px;
+        font-size: 0.95rem;
+    }
+
+    .toolbar button {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    #warning-output {
+        font-size: 1rem;
+    }
+}
+
+body[data-theme='dark'] #warning-output {
+    background-color: #2a3b4c; /* Dark theme output background */
+    border: 1px solid #4d79a6;
+    color: #e0e0e0;
+}
+
+body[data-theme='dark'] footer {
+    color: #aaa;
+    border-top: 1px solid #444;
 }

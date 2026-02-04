@@ -5,13 +5,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const warningOutput = document.getElementById('warning-output');
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
     const langToggleBtn = document.getElementById('lang-toggle-btn');
-    const downloadPdfBtn = document.getElementById('download-pdf-btn'); // Added
+    const downloadPdfBtn = document.getElementById('download-pdf-btn');
+    const chemicalNameError = document.createElement('p'); // For inline error
+    chemicalNameError.className = 'error-message';
+    chemicalNameInput.parentNode.insertBefore(chemicalNameError, chemicalNameInput.nextSibling);
+    const hazardTypeError = document.createElement('p'); // For inline error
+    hazardTypeError.className = 'error-message';
+    document.querySelector('.checkbox-group').parentNode.insertBefore(hazardTypeError, document.querySelector('.checkbox-group').nextSibling);
 
     let currentLanguage = 'ko';
 
     const translations = {
         ko: {
             main_title: '물질안전정보 경고 생성기',
+            intro_text: 'MSDS(물질안전보건자료) 또는 SDS(안전보건자료)는 화학 물질의 잠재적 위험에 대한 중요한 정보를 제공합니다. 이 도구는 입력한 화학 물질과 선택한 위험 유형에 따라 기본적인 경고 문구를 생성하여 안전 관리 및 규정 준수에 도움을 줍니다.',
             chemical_name_label: '화학물질명:',
             hazard_types_label: '위험 유형:',
             flammable_label: '인화성',
@@ -20,11 +27,22 @@ document.addEventListener('DOMContentLoaded', () => {
             oxidizer_label: '산화성',
             generate_btn: '경고 생성',
             generated_warning_title: '생성된 경고',
-            msds_header: '**물질안전보건자료**',
-            download_pdf_btn: 'PDF 다운로드'
+            msds_header: '<strong>물질안전보건자료</strong>',
+            download_pdf_btn: 'PDF 다운로드',
+            partnership_inquiry_title: '제휴 문의',
+            form_name_label: '이름:',
+            form_email_label: '이메일:',
+            form_company_label: '회사명:',
+            form_message_label: '문의 내용:',
+            form_submit_btn: '제출',
+            footer_text: '생성된 경고는 정보 제공 목적으로만 사용되어야 하며, 공식 MSDS/SDS 문서를 대체할 수 없습니다.',
+            error_chemical_name_empty: '화학물질명을 입력해주세요.',
+            error_hazard_type_empty: '하나 이상의 위험 유형을 선택해주세요.',
+            pdf_download_info: 'PDF 다운로드 기능은 현재 개발 중입니다. 공식 MSDS/SDS 문서는 제공되지 않으며, 이 생성기는 정보 제공 목적으로만 사용됩니다.'
         },
         en: {
             main_title: 'MSDS Warning Generator',
+            intro_text: 'MSDS (Material Safety Data Sheet) or SDS (Safety Data Sheet) provides crucial information about the potential hazards of chemical substances. This tool generates basic warning statements based on the chemical name and hazard types you select, assisting in safety management and regulatory compliance.',
             chemical_name_label: 'Chemical Name:',
             hazard_types_label: 'Hazard Types:',
             flammable_label: 'Flammable',
@@ -33,18 +51,48 @@ document.addEventListener('DOMContentLoaded', () => {
             oxidizer_label: 'Oxidizer',
             generate_btn: 'Generate Warning',
             generated_warning_title: 'Generated Warning',
-            msds_header: '**MATERIAL SAFETY DATA SHEET**',
-            download_pdf_btn: 'Download PDF'
+            msds_header: '<strong>MATERIAL SAFETY DATA SHEET</strong>',
+            download_pdf_btn: 'Download PDF',
+            partnership_inquiry_title: 'Partnership Inquiry',
+            form_name_label: 'Name:',
+            form_email_label: 'Email:',
+            form_company_label: 'Company Name:',
+            form_message_label: 'Message:',
+            form_submit_btn: 'Submit',
+            footer_text: 'Generated warnings are for informational purposes only and should not replace official MSDS/SDS documents.',
+            error_chemical_name_empty: 'Please enter a chemical name.',
+            error_hazard_type_empty: 'Please select at least one hazard type.',
+            pdf_download_info: 'PDF download functionality is currently under development. Official MSDS/SDS documents are not provided, and this generator is for informational purposes only.'
         }
+    };
+
+    const displayError = (element, message) => {
+        element.textContent = message;
+        element.style.color = 'red';
+        element.style.fontSize = '0.9em';
+        element.style.marginTop = '0.5em';
+        element.style.marginBottom = '0.5em';
+        element.style.textAlign = 'left';
+    };
+
+    const clearErrors = () => {
+        chemicalNameError.textContent = '';
+        hazardTypeError.textContent = '';
     };
 
     const updateText = () => {
         document.querySelectorAll('[data-translate-key]').forEach(el => {
             const key = el.getAttribute('data-translate-key');
             if (translations[currentLanguage][key]) {
-                el.textContent = translations[currentLanguage][key];
+                if (el.tagName === 'P' || el.tagName === 'H1' || el.tagName === 'H2' || el.tagName === 'LABEL' || el.tagName === 'BUTTON') {
+                    el.textContent = translations[currentLanguage][key];
+                } else {
+                    // For msds_header which contains HTML, use innerHTML
+                    el.innerHTML = translations[currentLanguage][key];
+                }
             }
         });
+        chemicalNameInput.placeholder = translations[currentLanguage].chemical_name_placeholder || chemicalNameInput.placeholder;
     };
 
     themeToggleBtn.addEventListener('click', () => {
@@ -62,32 +110,43 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     generateBtn.addEventListener('click', () => {
+        clearErrors(); // Clear previous errors
+        let hasError = false;
+
         const chemicalName = chemicalNameInput.value.trim();
         if (!chemicalName) {
-            alert('Please enter a chemical name.');
-            return;
+            displayError(chemicalNameError, translations[currentLanguage].error_chemical_name_empty);
+            hasError = true;
         }
 
         const selectedHazards = Array.from(document.querySelectorAll('.checkbox-group input:checked'))
             .map(checkbox => checkbox.value);
 
         if (selectedHazards.length === 0) {
-            alert('Please select at least one hazard type.');
+            displayError(hazardTypeError, translations[currentLanguage].error_hazard_type_empty);
+            hasError = true;
+        }
+
+        if (hasError) {
+            warningContainer.style.display = 'none'; // Hide warning if there are errors
             return;
         }
 
-        const warningText = `${translations[currentLanguage].msds_header}\n\n` +
-                          `**Chemical:** ${chemicalName}\n\n` +
-                          `**Hazards:**\n` +
-                          `${selectedHazards.map(hazard => `- ${hazard}`).join('\n')}`;
+        const hazardListHtml = selectedHazards.map(hazard => `<li>${hazard}</li>`).join('');
 
-        warningOutput.textContent = warningText;
+        const warningHtml = `
+            <p>${translations[currentLanguage].msds_header}</p>
+            <p><strong>${translations[currentLanguage].chemical_name_label}</strong> ${chemicalName}</p>
+            <p><strong>${translations[currentLanguage].hazard_types_label}</strong></p>
+            <ul>${hazardListHtml}</ul>
+        `;
+
+        warningOutput.innerHTML = warningHtml; // Use innerHTML for formatting
         warningContainer.style.display = 'block';
     });
 
     downloadPdfBtn.addEventListener('click', () => {
-        alert(currentLanguage === 'ko' ? 'PDF 다운로드 기능을 구현하려면 다운로드할 PDF 파일의 경로 또는 생성 방법이 필요합니다.' : 'To implement PDF download, I need the path to the PDF file or instructions on how to generate it.');
-        // Further implementation will go here based on user's clarification
+        alert(translations[currentLanguage].pdf_download_info);
     });
 
     // Initialize with default language
