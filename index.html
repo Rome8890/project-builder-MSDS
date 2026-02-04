@@ -8,27 +8,31 @@
 </head>
 <body>
     <div class="container">
-        <h1>MSDS Warning Generator</h1>
+        <div class="toolbar">
+            <button id="theme-toggle-btn">Dark/Light Mode</button>
+            <button id="lang-toggle-btn">English/한국어</button>
+        </div>
+        <h1 data-translate-key="main_title">물질안전정보 경고 생성기</h1>
         <div class="form-container">
-            <label for="chemical-name">Chemical Name:</label>
+            <label for="chemical-name" data-translate-key="chemical_name_label">Chemical Name:</label>
             <input type="text" id="chemical-name" placeholder="Enter chemical name">
 
-            <label>Hazard Types:</label>
+            <label data-translate-key="hazard_types_label">Hazard Types:</label>
             <div class="checkbox-group">
                 <input type="checkbox" id="flammable" value="Flammable">
-                <label for="flammable">Flammable</label>
+                <label for="flammable" data-translate-key="flammable_label">Flammable</label>
                 <input type="checkbox" id="corrosive" value="Corrosive">
-                <label for="corrosive">Corrosive</label>
+                <label for="corrosive" data-translate-key="corrosive_label">Corrosive</label>
                 <input type="checkbox" id="toxic" value="Toxic">
-                <label for="toxic">Toxic</label>
+                <label for="toxic" data-translate-key="toxic_label">Toxic</label>
                 <input type="checkbox" id="oxidizer" value="Oxidizer">
-                <label for="oxidizer">Oxidizer</label>
+                <label for="oxidizer" data-translate-key="oxidizer_label">Oxidizer</label>
             </div>
 
-            <button id="generate-btn">Generate Warning</button>
+            <button id="generate-btn" data-translate-key="generate_btn">Generate Warning</button>
         </div>
         <div id="warning-container">
-            <h2>Generated Warning</h2>
+            <h2 data-translate-key="generated_warning_title">Generated Warning</h2>
             <div id="warning-output"></div>
         </div>
     </div>

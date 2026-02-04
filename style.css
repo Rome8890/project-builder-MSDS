@@ -77,6 +77,49 @@ button:hover {
     display: none; /* Initially hidden */
 }
 
+body[data-theme='dark'] {
+    background-color: #222;
+    color: #f4f4f9;
+}
+
+body[data-theme='dark'] .container {
+    background: #333;
+    box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
+}
+
+body[data-theme='dark'] h1 {
+    color: #ff6b6b;
+}
+
+body[data-theme='dark'] button {
+    background-color: #ff6b6b;
+}
+
+body[data-theme='dark'] button:hover {
+    background-color: #e05252;
+}
+
+body[data-theme='dark'] #warning-container {
+    border: 2px dashed #ff6b6b;
+    background: #444;
+}
+
+body[data-theme='dark'] #warning-output {
+    color: #f4f4f9;
+}
+
+.toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 1rem;
+}
+
+.toolbar button {
+    margin-left: 0.5rem;
+    padding: 5px 10px;
+    font-size: 0.9rem;
+}
+
 #warning-output {
     white-space: pre-wrap; /* Preserve formatting */
     font-size: 1.1rem;
