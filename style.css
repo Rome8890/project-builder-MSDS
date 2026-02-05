@@ -44,6 +44,17 @@ h1 {
     margin-bottom: 2.5rem; /* More space between sections */
 }
 
+
+.form-section > .form-container {
+    border: 1px solid #c8d0d8;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+    transition: box-shadow 0.3s ease-in-out;
+}
+
+.form-section > .form-container:hover {
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
 .form-container {
     margin-bottom: 1.5rem; /* Adjusted margin */
     padding: 1.5rem; /* Add padding to form container */
@@ -313,4 +324,40 @@ body[data-theme='dark'] #warning-output {
 body[data-theme='dark'] footer {
     color: #aaa;
     border-top: 1px solid #444;
+}
+
+/* Added styles for UI/UX Improvement */
+#generate-btn {
+    padding: 15px 25px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+    }
+}
+
+body[data-theme='dark'] #generate-btn {
+    animation-name: pulse-dark;
+}
+
+@keyframes pulse-dark {
+    0% {
+        box-shadow: 0 0 0 0 rgba(102, 179, 255, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(102, 179, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(102, 179, 255, 0);
+    }
 }

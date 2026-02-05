@@ -17,8 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const translations = {
         ko: {
-            main_title: '물질안전정보 경고 생성기',
-            intro_text: 'MSDS(물질안전보건자료) 또는 SDS(안전보건자료)는 화학 물질의 잠재적 위험에 대한 중요한 정보를 제공합니다. 이 도구는 입력한 화학 물질과 선택한 위험 유형에 따라 기본적인 경고 문구를 생성하여 안전 관리 및 규정 준수에 도움을 줍니다.',
+            main_title: '화학물질 경고문 즉시 생성',
+            intro_text: '화학물질명과 위험 유형을 선택하여 즉시 MSDS/SDS 경고문을 만드세요.',
             chemical_name_label: '화학물질명:',
             hazard_types_label: '위험 유형:',
             flammable_label: '인화성',
@@ -38,11 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
             footer_text: '생성된 경고는 정보 제공 목적으로만 사용되어야 하며, 공식 MSDS/SDS 문서를 대체할 수 없습니다.',
             error_chemical_name_empty: '화학물질명을 입력해주세요.',
             error_hazard_type_empty: '하나 이상의 위험 유형을 선택해주세요.',
-            pdf_download_info: 'PDF 다운로드 기능은 현재 개발 중입니다. 공식 MSDS/SDS 문서는 제공되지 않으며, 이 생성기는 정보 제공 목적으로만 사용됩니다.'
+            pdf_download_info: 'PDF 다운로드 기능은 현재 개발 중입니다. 공식 MSDS/SDS 문서는 제공되지 않으며, 이 생성기는 정보 제공 목적으로만 사용됩니다.',
+            example_chemical_name: '에탄올 (Ethanol)',
+            example_generated_warning_title: '경고문 예시'
         },
         en: {
-            main_title: 'MSDS Warning Generator',
-            intro_text: 'MSDS (Material Safety Data Sheet) or SDS (Safety Data Sheet) provides crucial information about the potential hazards of chemical substances. This tool generates basic warning statements based on the chemical name and hazard types you select, assisting in safety management and regulatory compliance.',
+            main_title: 'Instant Chemical Warning Generator',
+            intro_text: 'Instantly create MSDS/SDS warnings by selecting a chemical name and hazard types.',
             chemical_name_label: 'Chemical Name:',
             hazard_types_label: 'Hazard Types:',
             flammable_label: 'Flammable',
@@ -62,7 +64,9 @@ document.addEventListener('DOMContentLoaded', () => {
             footer_text: 'Generated warnings are for informational purposes only and should not replace official MSDS/SDS documents.',
             error_chemical_name_empty: 'Please enter a chemical name.',
             error_hazard_type_empty: 'Please select at least one hazard type.',
-            pdf_download_info: 'PDF download functionality is currently under development. Official MSDS/SDS documents are not provided, and this generator is for informational purposes only.'
+            pdf_download_info: 'PDF download functionality is currently under development. Official MSDS/SDS documents are not provided, and this generator is for informational purposes only.',
+            example_chemical_name: 'Ethanol',
+            example_generated_warning_title: 'Example Warning'
         }
     };
 
@@ -95,6 +99,23 @@ document.addEventListener('DOMContentLoaded', () => {
         chemicalNameInput.placeholder = translations[currentLanguage].chemical_name_placeholder || chemicalNameInput.placeholder;
     };
 
+    const showExampleWarning = () => {
+        const exampleChemicalName = translations[currentLanguage].example_chemical_name;
+        const exampleHazards = [translations[currentLanguage].flammable_label, translations[currentLanguage].toxic_label];
+        const hazardListHtml = exampleHazards.map(hazard => `<li>${hazard}</li>`).join('');
+
+        const warningHtml = `
+            <p>${translations[currentLanguage].msds_header}</p>
+            <p><strong>${translations[currentLanguage].chemical_name_label}</strong> ${exampleChemicalName}</p>
+            <p><strong>${translations[currentLanguage].hazard_types_label}</strong></p>
+            <ul>${hazardListHtml}</ul>
+        `;
+        
+        warningOutput.innerHTML = warningHtml;
+        warningContainer.querySelector('h2').textContent = translations[currentLanguage].example_generated_warning_title;
+        warningContainer.style.display = 'block';
+    };
+
     themeToggleBtn.addEventListener('click', () => {
         const currentTheme = document.body.getAttribute('data-theme');
         if (currentTheme === 'dark') {
@@ -107,6 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     langToggleBtn.addEventListener('click', () => {
         currentLanguage = currentLanguage === 'ko' ? 'en' : 'ko';
         updateText();
+        showExampleWarning(); // Update example on language change
     });
 
     generateBtn.addEventListener('click', () => {
@@ -120,7 +142,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const selectedHazards = Array.from(document.querySelectorAll('.checkbox-group input:checked'))
-            .map(checkbox => checkbox.value);
+            .map(checkbox => {
+                const label = document.querySelector(`label[for='${checkbox.id}']`);
+                return label.textContent;
+            });
 
         if (selectedHazards.length === 0) {
             displayError(hazardTypeError, translations[currentLanguage].error_hazard_type_empty);
@@ -142,6 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         warningOutput.innerHTML = warningHtml; // Use innerHTML for formatting
+        warningContainer.querySelector('h2').textContent = translations[currentLanguage].generated_warning_title;
         warningContainer.style.display = 'block';
     });
 
@@ -165,6 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Initialize with default language
+    // Initialize with default language and show example
     updateText();
+    showExampleWarning();
 });
