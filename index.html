@@ -1,14 +1,17 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
+    <meta name="google-adsense-account" content="ca-pub-1422054760116816">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="AI Voice Generator: Instantly convert text into natural-sounding speech.">
-    <meta name="keywords" content="TTS, text-to-speech, voice generator, AI voice, speech synthesis">
-    <title>AI Voice Generator</title>
+    <meta name="description" content="MSDS/SDS Warning Generator: Easily generate chemical hazard warnings for safety and compliance.">
+    <meta name="keywords" content="MSDS, SDS, chemical safety, hazard warning, safety data sheet, material safety data sheet, chemical generator">
+    <title>MSDS Warning Generator</title>
     <link rel="stylesheet" href="style.css">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1422054760116816"
      crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -17,30 +20,59 @@
                 <button id="theme-toggle-btn">Dark/Light Mode</button>
                 <button id="lang-toggle-btn">English/한국어</button>
             </div>
-            <h1 data-translate-key="main_title">AI 보이스 생성기</h1>
+            <h1 data-translate-key="main_title">물질안전정보 경고 생성기</h1>
             <p data-translate-key="intro_text" class="intro-text">
-                텍스트를 자연스러운 인공지능 목소리로 변환해보세요. 지금 바로 문장을 입력하고 생성하기 버튼을 누르세요.
+                MSDS(물질안전보건자료) 또는 SDS(안전보건자료)는 화학 물질의 잠재적 위험에 대한 중요한 정보를 제공합니다. 이 도구는 입력한 화학 물질과 선택한 위험 유형에 따라 기본적인 경고 문구를 생성하여 안전 관리 및 규정 준수에 도움을 줍니다.
             </p>
         </header>
         <main>
-            <section class="tts-section">
+            <section class="form-section">
                 <div class="form-container">
-                    <label for="tts-text" data-translate-key="text_input_label">Text to Convert:</label>
-                    <textarea id="tts-text" placeholder="Enter text here..."></textarea>
-                    
-                    <button id="generate-btn" data-translate-key="generate_btn">Generate Voice</button>
-
-                    <div id="audio-container" style="display: none;">
-                        <h2 data-translate-key="generated_audio_title">Generated Audio</h2>
-                        <audio id="audio-output" controls>
-                            Your browser does not support the audio element.
-                        </audio>
+                    <label for="chemical-name" data-translate-key="chemical_name_label">Chemical Name:</label>
+                    <input type="text" id="chemical-name" placeholder="Enter chemical name">
+        
+                    <label data-translate-key="hazard_types_label">Hazard Types:</label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="flammable" value="Flammable">
+                        <label for="flammable" data-translate-key="flammable_label">Flammable</label>
+                        <input type="checkbox" id="corrosive" value="Corrosive">
+                        <label for="corrosive" data-translate-key="corrosive_label">Corrosive</label>
+                        <input type="checkbox" id="toxic" value="Toxic">
+                        <label for="toxic" data-translate-key="toxic_label">Toxic</label>
+                        <input type="checkbox" id="oxidizer" value="Oxidizer">
+                        <label for="oxidizer" data-translate-key="oxidizer_label">Oxidizer</label>
                     </div>
+        
+                    <button id="generate-btn" data-translate-key="generate_btn">Generate Warning</button>
+                    <button id="download-pdf-btn" data-translate-key="download_pdf_btn">PDF 다운로드</button>
+                </div>
+                <div id="warning-container">
+                    <h2 data-translate-key="generated_warning_title">Generated Warning</h2>
+                    <div id="warning-output"></div>
                 </div>
             </section>
         </main>
+        <section id="partnership-form-section" class="form-container">
+            <h2 data-translate-key="partnership_inquiry_title">제휴 문의</h2>
+            <form action="https://formspree.io/f/mojlgyze" method="POST">
+                <label for="name" data-translate-key="form_name_label">이름:</label>
+                <input type="text" id="name" name="name" required>
+        
+                <label for="email" data-translate-key="form_email_label">이메일:</label>
+                <input type="email" id="email" name="email" required>
+        
+                <label for="company" data-translate-key="form_company_label">회사명:</label>
+                <input type="text" id="company" name="company">
+        
+                <label for="message" data-translate-key="form_message_label">문의 내용:</label>
+                <textarea id="message" name="message" rows="5" required></textarea>
+        
+                <button type="submit" data-translate-key="form_submit_btn">제출</button>
+            </form>
+        </section>
         <footer>
-            <p>&copy; 2026 AI Voice Generator. All rights reserved.</p>
+            <p>&copy; 2026 MSDS Warning Generator. All rights reserved.</p>
+            <p data-translate-key="footer_text">Generated warnings are for informational purposes only and should not replace official MSDS/SDS documents.</p>
         </footer>
     </div>
     <script src="main.js"></script>
