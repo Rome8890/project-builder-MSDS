@@ -1,197 +1,241 @@
+
 document.addEventListener('DOMContentLoaded', () => {
-    const generateBtn = document.getElementById('generate-btn');
-    const chemicalNameInput = document.getElementById('chemical-name');
-    const warningContainer = document.getElementById('warning-container');
-    const warningOutput = document.getElementById('warning-output');
-    const themeToggleBtn = document.getElementById('theme-toggle-btn');
-    const langToggleBtn = document.getElementById('lang-toggle-btn');
-    const downloadPdfBtn = document.getElementById('download-pdf-btn');
-    const chemicalNameError = document.createElement('p'); // For inline error
-    chemicalNameError.className = 'error-message';
-    chemicalNameInput.parentNode.insertBefore(chemicalNameError, chemicalNameInput.nextSibling);
-    const hazardTypeError = document.createElement('p'); // For inline error
-    hazardTypeError.className = 'error-message';
-    document.querySelector('.checkbox-group').parentNode.insertBefore(hazardTypeError, document.querySelector('.checkbox-group').nextSibling);
+    // DOM Element References
+    const generateBtn = document.getElementById('generateBtn');
+    const chemicalNameInput = document.getElementById('chemName');
+    const warningOutput = document.getElementById('warningOutput');
+    const warningContainer = document.querySelector('.output-section');
+    const langToggleBtn = document.getElementById('langToggle');
+    const downloadPdfBtn = document.getElementById('downloadPdfBtn');
+    const darkModeToggle = document.getElementById('darkModeToggle');
 
-    let currentLanguage = 'ko';
+    // API Configuration
+    const KOSHA_MSDS_API_BASE_URL = 'https://msds.kosha.or.kr/openapi/service/msdschem';
+    const KOSHA_MSDS_API_KEY = 'f2e6e376e7edc476fd0e6243533b9d603cdedaa4ab864bcb206bde1b47d50a38';
 
+    // Translations
     const translations = {
         ko: {
-            main_title: '화학물질 경고문 즉시 생성',
-            intro_text: '화학물질명과 위험 유형을 선택하여 즉시 MSDS/SDS 경고문을 만드세요.',
-            chemical_name_label: '화학물질명:',
-            hazard_types_label: '위험 유형:',
-            flammable_label: '인화성',
-            corrosive_label: '부식성',
-            toxic_label: '독성',
-            oxidizer_label: '산화성',
-            generate_btn: '경고 생성',
-            generated_warning_title: '생성된 경고',
-            msds_header: '<strong>물질안전보건자료</strong>',
-            download_pdf_btn: 'PDF 다운로드',
-            partnership_inquiry_title: '제휴 문의',
-            form_name_label: '이름:',
-            form_email_label: '이메일:',
-            form_company_label: '회사명:',
-            form_message_label: '문의 내용:',
-            form_submit_btn: '제출',
-            footer_text: '생성된 경고는 정보 제공 목적으로만 사용되어야 하며, 공식 MSDS/SDS 문서를 대체할 수 없습니다.',
-            error_chemical_name_empty: '화학물질명을 입력해주세요.',
-            error_hazard_type_empty: '하나 이상의 위험 유형을 선택해주세요.',
-            pdf_download_info: 'PDF 다운로드 기능은 현재 개발 중입니다. 공식 MSDS/SDS 문서는 제공되지 않으며, 이 생성기는 정보 제공 목적으로만 사용됩니다.',
-            example_chemical_name: '에탄올 (Ethanol)',
-            example_generated_warning_title: '경고문 예시'
+            page_title: "MSDS 경고 생성기",
+            main_title: "화학물질 경고문 즉시 생성",
+            main_subtitle: "화학물질명을 입력하여 즉시 MSDS/SDS 경고문을 만드세요.",
+            step1_title: "1. 화학물질 정보 입력",
+            chem_name_label: "화학물질명:",
+            generate_button: "경고 라벨 생성",
+            pdf_button: "PDF 다운로드",
+            generated_warning_title: "생성된 경고 라벨",
+            contact_title: "제휴 문의",
+            contact_name: "이름:",
+            contact_email: "이메일:",
+            contact_company: "회사명:",
+            contact_message: "문의 내용:",
+            submit_button: "제출",
+            footer_copyright: "© 2026 MSDS Warning Generator. All rights reserved.",
+            footer_disclaimer: "생성된 경고는 정보 제공 목적으로만 사용되어야 하며, 공식 MSDS/SDS 문서를 대체할 수 없습니다.",
+            error_chemical_name_empty: "화학물질명을 입력해주세요.",
+            error_api_no_result: "해당 화학물질을 찾을 수 없습니다. 철자를 확인하거나 다른 이름으로 시도해주세요.",
+            error_api_failed: "API에서 데이터를 가져오는 데 실패했습니다. 잠시 후 다시 시도해주세요.",
+            loading_message: "화학물질 데이터를 불러오는 중...",
+            signal_word_header: "신호어",
+            hazard_statement_header: "유해·위험 문구",
+            precautionary_statement_header: "예방조치 문구",
+            lang_button: "English",
+            chem_name_placeholder: "예: 아세톤, 이소프로필알코올"
         },
         en: {
-            main_title: 'Instant Chemical Warning Generator',
-            intro_text: 'Instantly create MSDS/SDS warnings by selecting a chemical name and hazard types.',
-            chemical_name_label: 'Chemical Name:',
-            hazard_types_label: 'Hazard Types:',
-            flammable_label: 'Flammable',
-            corrosive_label: 'Corrosive',
-            toxic_label: 'Toxic',
-            oxidizer_label: 'Oxidizer',
-            generate_btn: 'Generate Warning',
-            generated_warning_title: 'Generated Warning',
-            msds_header: '<strong>MATERIAL SAFETY DATA SHEET</strong>',
-            download_pdf_btn: 'Download PDF',
-            partnership_inquiry_title: 'Partnership Inquiry',
-            form_name_label: 'Name:',
-            form_email_label: 'Email:',
-            form_company_label: 'Company Name:',
-            form_message_label: 'Message:',
-            form_submit_btn: 'Submit',
-            footer_text: 'Generated warnings are for informational purposes only and should not replace official MSDS/SDS documents.',
-            error_chemical_name_empty: 'Please enter a chemical name.',
-            error_hazard_type_empty: 'Please select at least one hazard type.',
-            pdf_download_info: 'PDF download functionality is currently under development. Official MSDS/SDS documents are not provided, and this generator is for informational purposes only.',
-            example_chemical_name: 'Ethanol',
-            example_generated_warning_title: 'Example Warning'
+            page_title: "MSDS Warning Generator",
+            main_title: "Instant Chemical Warning Generator",
+            main_subtitle: "Create MSDS/SDS warnings instantly by entering a chemical name.",
+            step1_title: "1. Enter Chemical Information",
+            chem_name_label: "Chemical Name:",
+            generate_button: "Generate Warning Label",
+            pdf_button: "Download PDF",
+            generated_warning_title: "Generated Warning Label",
+            contact_title: "Partnership Inquiry",
+            contact_name: "Name:",
+            contact_email: "Email:",
+            contact_company: "Company Name:",
+            contact_message: "Message:",
+            submit_button: "Submit",
+            footer_copyright: "© 2026 MSDS Warning Generator. All rights reserved.",
+            footer_disclaimer: "Generated warnings are for informational purposes only and should not replace official MSDS/SDS documents.",
+            error_chemical_name_empty: "Please enter a chemical name.",
+            error_api_no_result: "Could not find the chemical. Please check spelling or try another name.",
+            error_api_failed: "Failed to fetch data from the API. Please try again later.",
+            loading_message: "Loading chemical data...",
+            signal_word_header: "Signal Word",
+            hazard_statement_header: "Hazard Statements",
+            precautionary_statement_header: "Precautionary Statements",
+            lang_button: "한국어",
+            chem_name_placeholder: "e.g., Acetone, Isopropyl alcohol"
         }
     };
+    let currentLanguage = 'ko';
 
-    const displayError = (element, message) => {
-        element.textContent = message;
-        element.style.color = 'red';
-        element.style.fontSize = '0.9em';
-        element.style.marginTop = '0.5em';
-        element.style.marginBottom = '0.5em';
-        element.style.textAlign = 'left';
-    };
-
-    const clearErrors = () => {
-        chemicalNameError.textContent = '';
-        hazardTypeError.textContent = '';
-    };
+    // --- Helper Functions ---
 
     const updateText = () => {
-        document.querySelectorAll('[data-translate-key]').forEach(el => {
-            const key = el.getAttribute('data-translate-key');
+        document.querySelectorAll('[data-lang-key]').forEach(el => {
+            const key = el.getAttribute('data-lang-key');
             if (translations[currentLanguage][key]) {
-                if (el.tagName === 'P' || el.tagName === 'H1' || el.tagName === 'H2' || el.tagName === 'LABEL' || el.tagName === 'BUTTON') {
-                    el.textContent = translations[currentLanguage][key];
-                } else {
-                    // For msds_header which contains HTML, use innerHTML
-                    el.innerHTML = translations[currentLanguage][key];
-                }
+                el.textContent = translations[currentLanguage][key];
             }
         });
-        chemicalNameInput.placeholder = translations[currentLanguage].chemical_name_placeholder || chemicalNameInput.placeholder;
+        document.title = translations[currentLanguage].page_title;
+        chemicalNameInput.placeholder = translations[currentLanguage].chem_name_placeholder;
+        langToggleBtn.textContent = translations[currentLanguage].lang_button;
     };
 
-    const showExampleWarning = () => {
-        const exampleChemicalName = translations[currentLanguage].example_chemical_name;
-        const exampleHazards = [translations[currentLanguage].flammable_label, translations[currentLanguage].toxic_label];
-        const hazardListHtml = exampleHazards.map(hazard => `<li>${hazard}</li>`).join('');
-
-        const warningHtml = `
-            <p>${translations[currentLanguage].msds_header}</p>
-            <p><strong>${translations[currentLanguage].chemical_name_label}</strong> ${exampleChemicalName}</p>
-            <p><strong>${translations[currentLanguage].hazard_types_label}</strong></p>
-            <ul>${hazardListHtml}</ul>
-        `;
-        
-        warningOutput.innerHTML = warningHtml;
-        warningContainer.querySelector('h2').textContent = translations[currentLanguage].example_generated_warning_title;
+    const displayMessage = (html, isError = false) => {
+        warningOutput.innerHTML = html;
+        warningOutput.className = isError ? 'warning-card error' : 'warning-card';
         warningContainer.style.display = 'block';
     };
 
-    themeToggleBtn.addEventListener('click', () => {
-        const currentTheme = document.body.getAttribute('data-theme');
-        if (currentTheme === 'dark') {
-            document.body.removeAttribute('data-theme');
-        } else {
-            document.body.setAttribute('data-theme', 'dark');
+    const fetchApiData = async (endpoint, params) => {
+        const url = new URL(`${KOSHA_MSDS_API_BASE_URL}/${endpoint}`);
+        url.searchParams.append('serviceKey', KOSHA_MSDS_API_KEY);
+        Object.entries(params).forEach(([key, value]) => url.searchParams.append(key, value));
+        
+        const response = await fetch(url, { headers: { 'Accept': 'application/xml' } });
+        if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+        
+        const text = await response.text();
+        const xmlDoc = new DOMParser().parseFromString(text, "application/xml");
+        
+        const resultCode = xmlDoc.querySelector('resultCode, ResultCode')?.textContent;
+        if (resultCode && resultCode !== '00') {
+             const errorMsg = xmlDoc.querySelector('resultMsg, ResultMsg')?.textContent;
+             console.warn(`API Warning for ${endpoint}: ${errorMsg} (Code: ${resultCode})`);
+        }
+        return xmlDoc;
+    };
+
+    // --- Core API Logic ---
+
+    const getChemId = async (chemicalName) => {
+        const xmlDoc = await fetchApiData('getMsdsChemList', { 'searchWrd': chemicalName, 'searchCnd': '0' });
+        const items = xmlDoc.querySelectorAll('item');
+        if (items.length === 0) return null;
+        const exactMatch = [...items].find(item => 
+            (item.querySelector('chemNmKo')?.textContent?.toLowerCase() === chemicalName.toLowerCase()) ||
+            (item.querySelector('chemNmEn')?.textContent?.toLowerCase() === chemicalName.toLowerCase())
+        );
+        return exactMatch?.querySelector('chemId')?.textContent || items[0].querySelector('chemId')?.textContent;
+    };
+
+    const getChemicalDetails = async (chemId) => {
+        const [pictogramXml, summaryXml] = await Promise.all([
+            fetchApiData('getMsdsGhsPictogramInfo', { 'chemId': chemId }),
+            fetchApiData('getMsdsSftyInfo', { 'chemId': chemId })
+        ]);
+
+        const pictograms = [...pictogramXml.querySelectorAll('item')]
+            .map(item => item.querySelector('pictogramUrl')?.textContent)
+            .filter(Boolean);
+
+        const summaryItem = summaryXml.querySelector('item');
+        return {
+            pictograms,
+            signalWord: summaryItem?.querySelector('signalWrd')?.textContent || '정보 없음',
+            hPhrases: summaryItem?.querySelector('hPhrase')?.innerHTML.split('&lt;br/&gt;').map(p => `<li>${p.trim()}</li>`).join('') || '<li>정보 없음</li>',
+            pPhrases: summaryItem?.querySelector('pPhrase')?.innerHTML.split('&lt;br/&gt;').map(p => `<li>${p.trim()}</li>`).join('') || '<li>정보 없음</li>',
+        };
+    };
+
+    // --- HTML Rendering ---
+
+    const buildWarningLabelHtml = (details, chemicalName) => {
+        const pictogramHtml = details.pictograms.length > 0
+            ? details.pictograms.map(url => `<img src="${url}" alt="GHS Pictogram" class="ghs-pictogram">`).join('')
+            : '<p>그림문자 정보 없음</p>';
+
+        return `
+            <h3 data-lang-key="generated_warning_title">${translations[currentLanguage].generated_warning_title}</h3>
+            <p><strong>${translations[currentLanguage].chem_name_label}</strong> ${chemicalName}</p>
+            <div class="ghs-pictogram-container">${pictogramHtml}</div>
+            <div class="signal-word">
+                <h4>${translations[currentLanguage].signal_word_header}</h4>
+                <p class="${(details.signalWord === '위험' || details.signalWord.toLowerCase() === 'danger') ? 'danger' : 'warning'}">${details.signalWord}</p>
+            </div>
+            <div class="hazard-statements">
+                <h4>${translations[currentLanguage].hazard_statement_header}</h4>
+                <ul>${details.hPhrases}</ul>
+            </div>
+            <div class="precautionary-statements">
+                <h4>${translations[currentLanguage].precautionary_statement_header}</h4>
+                <ul>${details.pPhrases}</ul>
+            </div>
+        `;
+    };
+
+    // --- Event Listeners ---
+
+    generateBtn.addEventListener('click', async () => {
+        const chemicalName = chemicalNameInput.value.trim();
+        if (!chemicalName) {
+            displayMessage(`<p>${translations[currentLanguage].error_chemical_name_empty}</p>`, true);
+            return;
+        }
+
+        displayMessage(`<p>${translations[currentLanguage].loading_message}</p>`);
+        warningContainer.scrollIntoView({ behavior: 'smooth' });
+
+        try {
+            const chemId = await getChemId(chemicalName);
+            if (!chemId) {
+                displayMessage(`<p>${translations[currentLanguage].error_api_no_result}</p>`, true);
+                return;
+            }
+            const chemicalDetails = await getChemicalDetails(chemId);
+            const finalHtml = buildWarningLabelHtml(chemicalDetails, chemicalName);
+            displayMessage(finalHtml);
+        } catch (error) {
+            console.error("Error during API fetch:", error);
+            displayMessage(`<p>${translations[currentLanguage].error_api_failed}</p>`, true);
         }
     });
 
     langToggleBtn.addEventListener('click', () => {
-        currentLanguage = currentLanguage === 'ko' ? 'en' : 'ko';
+        currentLanguage = (currentLanguage === 'ko') ? 'en' : 'ko';
         updateText();
-        showExampleWarning(); // Update example on language change
     });
 
-    generateBtn.addEventListener('click', () => {
-        clearErrors(); // Clear previous errors
-        let hasError = false;
-
-        const chemicalName = chemicalNameInput.value.trim();
-        if (!chemicalName) {
-            displayError(chemicalNameError, translations[currentLanguage].error_chemical_name_empty);
-            hasError = true;
-        }
-
-        const selectedHazards = Array.from(document.querySelectorAll('.checkbox-group input:checked'))
-            .map(checkbox => {
-                const label = document.querySelector(`label[for='${checkbox.id}']`);
-                return label.textContent;
-            });
-
-        if (selectedHazards.length === 0) {
-            displayError(hazardTypeError, translations[currentLanguage].error_hazard_type_empty);
-            hasError = true;
-        }
-
-        if (hasError) {
-            warningContainer.style.display = 'none'; // Hide warning if there are errors
-            return;
-        }
-
-        const hazardListHtml = selectedHazards.map(hazard => `<li>${hazard}</li>`).join('');
-
-        const warningHtml = `
-            <p>${translations[currentLanguage].msds_header}</p>
-            <p><strong>${translations[currentLanguage].chemical_name_label}</strong> ${chemicalName}</p>
-            <p><strong>${translations[currentLanguage].hazard_types_label}</strong></p>
-            <ul>${hazardListHtml}</ul>
-        `;
-
-        warningOutput.innerHTML = warningHtml; // Use innerHTML for formatting
-        warningContainer.querySelector('h2').textContent = translations[currentLanguage].generated_warning_title;
-        warningContainer.style.display = 'block';
+    darkModeToggle.addEventListener('change', () => {
+        document.body.classList.toggle('dark-mode', darkModeToggle.checked);
     });
 
     downloadPdfBtn.addEventListener('click', () => {
-        const { jsPDF } = window.jspdf;
-        const warningContent = document.getElementById('warning-output');
-
-        if (warningContent.innerHTML.trim() === '') {
-            alert('Please generate a warning first.');
+        if (!warningOutput.innerHTML || warningOutput.querySelector('.error')) {
+            alert('Please generate a valid warning first.');
             return;
         }
-
-        html2canvas(warningContent).then(canvas => {
+        
+        const chemicalName = chemicalNameInput.value.trim() || 'warning';
+        html2canvas(warningOutput, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: document.body.classList.contains('dark-mode') ? '#1a1a2e' : '#f0f2f5'
+        }).then(canvas => {
             const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF();
-            const imgProps= pdf.getImageProperties(imgData);
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
             const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save('msds-warning.pdf');
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const margin = 10;
+            const contentWidth = pdfWidth - (margin * 2);
+            const contentHeight = (canvas.height * contentWidth) / canvas.width;
+
+            if (contentHeight > pdfHeight - (margin * 2)) {
+                alert("생성된 콘텐츠가 PDF 한 페이지에 담기에는 너무 깁니다. PDF 생성 기능은 계속 개선 중입니다.");
+                return;
+            }
+            pdf.addImage(imgData, 'PNG', margin, margin, contentWidth, contentHeight);
+            pdf.save(`${chemicalName}-MSDS-Warning.pdf`);
         });
     });
 
-    // Initialize with default language and show example
+    // --- Initialization ---
     updateText();
-    showExampleWarning();
+    warningContainer.style.display = 'none';
 });

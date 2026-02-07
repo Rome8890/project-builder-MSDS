@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSDS 경고 표지</title>
+    <!-- Font Awesome for PPE icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        /* A4 Print Styles */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 1cm;
+            }
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                background-color: #fff;
+            }
+            .label-container {
+                width: 100%;
+                height: 100%;
+                border: none;
+                box-shadow: none;
+            }
+        }
+
+        body {
+            font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .label-container {
+            width: 190mm; /* A4 width - margins */
+            height: 277mm; /* A4 height - margins */
+            border: 2px solid #333;
+            background-color: #fff;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .header h1 {
+            font-size: 2.5em;
+            margin: 0;
+            font-weight: 900;
+        }
+
+        /* Main Content */
+        .main-content {
+            display: flex;
+            gap: 20px;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .container-image {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+        }
+        .container-image .fa-box {
+            font-size: 8em;
+            color: #a0a0a0;
+        }
+
+        .ghs-pictograms {
+            flex: 2;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+        .ghs-pictograms img {
+            width: 100%;
+            max-width: 120px;
+            height: auto;
+        }
+
+        /* Signal Word */
+        .signal-word {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .signal-word h2 {
+            font-size: 3em;
+            color: #d9534f; /* Red for 'Danger' */
+            margin: 0;
+            font-weight: bold;
+        }
+
+        /* Statements */
+        .statements {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .statements h3 {
+            font-size: 1.2em;
+            margin: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .statements ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .statements ul li {
+            margin-bottom: 5px;
+        }
+
+        /* PPE Section */
+        .ppe-section {
+            border-top: 2px solid #ccc;
+            border-bottom: 2px solid #ccc;
+            padding: 15px 0;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+        .ppe-icon {
+            text-align: center;
+        }
+        .ppe-icon .fas {
+            font-size: 3.5em;
+            color: #007bff;
+        }
+        .ppe-icon p {
+            margin-top: 5px;
+            font-weight: bold;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: auto;
+        }
+        .footer h3 {
+            font-size: 1.2em;
+        }
+        .footer p {
+            margin: 2px 0;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="label-container">
+        <!-- Header: Chemical Name -->
+        <header class="header">
+            <h1>{{chemical_name}}</h1>
+        </header>
+
+        <!-- Main Content: Container Image & GHS Pictograms -->
+        <section class="main-content">
+            <div class="container-image">
+                <!-- Placeholder for container image -->
+                <i class="fa-solid fa-box"></i>
+            </div>
+            <div class="ghs-pictograms">
+                <!-- API에서 받아온 그림문자들을 동적으로 여기에 추가 -->
+                <!-- 예시: {{ghs_pictograms}} -->
+                <img src="https://upload.wikimedia.org/wikipedia/commons/a/a7/GHS-pictogram-flamme.svg" alt="인화성 그림문자">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/e/e5/GHS-pictogram-silhouette.svg" alt="건강 유해성 그림문자">
+                <!-- 다른 그림문자 추가 -->
+            </div>
+        </section>
+        
+        <!-- Signal Word -->
+        <section class="signal-word">
+            <h2>{{signal_word}}</h2>
+        </section>
+
+        <!-- Hazard and Precautionary Statements -->
+        <section class="statements">
+            <div>
+                <h3>유해위험문구</h3>
+                <ul>
+                    <!-- 예시: {{hazard_statements}} -->
+                    <li>매우 인화성이 높은 액체 및 증기</li>
+                    <li>삼키면 유해할 수 있음</li>
+                    <li>피부 자극을 일으킴</li>
+                </ul>
+            </div>
+            <div>
+                <h3>예방조치문구</h3>
+                <ul>
+                    <!-- 예시: {{precautionary_statements}} -->
+                    <li>(대응) 피부에 묻으면 다량의 물로 씻으시오.</li>
+                    <li>(저장) 용기는 단단히 밀폐하여 환기가 잘 되는 곳에 보관하시오.</li>
+                    <li>(폐기) 관련 법규에 따라 내용물/용기를 폐기하시오.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- PPE: Personal Protective Equipment -->
+        <section class="ppe-section">
+            <div class="ppe-icon">
+                <i class="fas fa-goggles"></i>
+                <p>보안경</p>
+            </div>
+            <div class="ppe-icon">
+                <i class="fas fa-mask-face"></i>
+                <p>호흡기</p>
+            </div>
+            <div class="ppe-icon">
+                <i class="fas fa-gloves"></i>
+                <p>보호장갑</p>
+            </div>
+            <div class="ppe-icon">
+                <i class="fas fa-user-shield"></i>
+                <p>보호의</p>
+            </div>
+        </section>
+        
+        <!-- Footer: Supplier Information -->
+        <footer class="footer">
+            <h3>공급자 정보</h3>
+            <!-- 예시: {{supplier_info}} -->
+            <p><strong>회사명:</strong> {{company_name}}</p>
+            <p><strong>주소:</strong> {{address}}</p>
+            <p><strong>긴급전화번호:</strong> {{emergency_phone}}</p>
+        </footer>
+    </div>
+
+</body>
+</html>

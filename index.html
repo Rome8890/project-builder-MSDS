@@ -1,80 +1,114 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
-    <meta name="google-adsense-account" content="ca-pub-1422054760116816">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MSDS/SDS Warning Generator: Easily generate chemical hazard warnings for safety and compliance.">
-    <meta name="keywords" content="MSDS, SDS, chemical safety, hazard warning, safety data sheet, material safety data sheet, chemical generator">
-    <title>MSDS Warning Generator</title>
+    <title data-lang-key="page_title">MSDS Warning Generator</title>
     <link rel="stylesheet" href="style.css">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1422054760116816"
-     crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- PDF Generation Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <div class="toolbar">
-                <button id="theme-toggle-btn">Dark/Light Mode</button>
-                <button id="lang-toggle-btn">English/한국어</button>
+    <header>
+        <nav>
+            <div class="top-controls">
+                <div class="mode-switch">
+                    <i class="fas fa-moon"></i>
+                    <label class="switch">
+                        <input type="checkbox" id="darkModeToggle">
+                        <span class="slider round"></span>
+                    </label>
+                    <i class="fas fa-sun"></i>
+                </div>
+                <div class="lang-switch">
+                    <button id="langToggle" class="control-button">English</button>
+                </div>
             </div>
-            <h1 data-translate-key="main_title">화학물질 경고문 즉시 생성</h1>
-            <p data-translate-key="intro_text" class="intro-text">
-                화학물질명과 위험 유형을 선택하여 즉시 MSDS/SDS 경고문을 만드세요.
-            </p>
-        </header>
-        <main>
-            <section class="form-section">
-                <div class="form-container">
-                    <label for="chemical-name" data-translate-key="chemical_name_label">Chemical Name:</label>
-                    <input type="text" id="chemical-name" placeholder="Enter chemical name">
-        
-                    <label data-translate-key="hazard_types_label">Hazard Types:</label>
-                    <div class="checkbox-group">
-                        <input type="checkbox" id="flammable" value="Flammable">
-                        <label for="flammable" data-translate-key="flammable_label">Flammable</label>
-                        <input type="checkbox" id="corrosive" value="Corrosive">
-                        <label for="corrosive" data-translate-key="corrosive_label">Corrosive</label>
-                        <input type="checkbox" id="toxic" value="Toxic">
-                        <label for="toxic" data-translate-key="toxic_label">Toxic</label>
-                        <input type="checkbox" id="oxidizer" value="Oxidizer">
-                        <label for="oxidizer" data-translate-key="oxidizer_label">Oxidizer</label>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="generator-section card-section">
+            <h1 class="section-title" data-lang-key="main_title">화학물질 경고문 즉시 생성</h1>
+            <p class="section-description" data-lang-key="main_subtitle">화학물질명과 위험 유형을 선택하여 즉시 MSDS/SDS 경고문을 만드세요.</p>
+            
+            <div class="step-card">
+                <div class="step-header">
+                    <i class="fas fa-flask step-icon"></i>
+                    <h2 data-lang-key="step1_title">1. 화학물질 정보 입력</h2>
+                </div>
+                <div class="step-content">
+                    <div class="form-group">
+                        <label for="chemName" data-lang-key="chem_name_label">화학물질명:</label>
+                        <input type="text" id="chemName" placeholder="예: Oil, Benzene">
                     </div>
-        
-                    <button id="generate-btn" data-translate-key="generate_btn">Generate Warning</button>
-                    <button id="download-pdf-btn" data-translate-key="download_pdf_btn">PDF 다운로드</button>
                 </div>
-                <div id="warning-container">
-                    <h2 data-translate-key="generated_warning_title">Generated Warning</h2>
-                    <div id="warning-output"></div>
+            </div>
+            
+            <div class="step-card">
+                <div class="step-header">
+                    <i class="fas fa-exclamation-triangle step-icon"></i>
+                    <h2 data-lang-key="step2_title">2. 위험 유형 선택</h2>
                 </div>
-            </section>
-        </main>
-        <section id="partnership-form-section" class="form-container">
-            <h2 data-translate-key="partnership_inquiry_title">제휴 문의</h2>
-            <form action="https://formspree.io/f/mojlgyze" method="POST">
-                <label for="name" data-translate-key="form_name_label">이름:</label>
-                <input type="text" id="name" name="name" required>
-        
-                <label for="email" data-translate-key="form_email_label">이메일:</label>
-                <input type="email" id="email" name="email" required>
-        
-                <label for="company" data-translate-key="form_company_label">회사명:</label>
-                <input type="text" id="company" name="company">
-        
-                <label for="message" data-translate-key="form_message_label">문의 내용:</label>
-                <textarea id="message" name="message" rows="5" required></textarea>
-        
-                <button type="submit" data-translate-key="form_submit_btn">제출</button>
+                <div class="step-content">
+                    <div class="checkbox-group">
+                        <label class="checkbox-item"><input type="checkbox" name="hazard" value="인화성"> <span data-lang-key="hazard_flammable">인화성</span></label>
+                        <label class="checkbox-item"><input type="checkbox" name="hazard" value="부식성"> <span data-lang-key="hazard_corrosive">부식성</span></label>
+                        <label class="checkbox-item"><input type="checkbox" name="hazard" value="독성"> <span data-lang-key="hazard_toxic">독성</span></label>
+                        <label class="checkbox-item"><input type="checkbox" name="hazard" value="산화성"> <span data-lang-key="hazard_oxidizing">산화성</span></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button id="generateBtn" class="primary-button" data-lang-key="generate_button">경고 생성</button>
+                <button id="downloadPdfBtn" class="secondary-button" data-lang-key="pdf_button">PDF 다운로드</button>
+            </div>
+        </section>
+
+        <section class="output-section card-section">
+            <h2 class="section-title" data-lang-key="generated_warning_title">생성된 경고</h2>
+            <div id="warningOutput" class="warning-card">
+                <h3 data-lang-key="output_card_title">물질안전보건자료</h3>
+                <p><strong data-lang-key="output_chem_name">화학물질명:</strong> <span id="outputChemName"></span></p>
+                <p><strong data-lang-key="output_hazard_type">위험 유형:</strong></p>
+                <ul id="outputHazardTypes">
+                </ul>
+            </div>
+        </section>
+
+        <section class="contact-section card-section">
+            <h2 class="section-title" data-lang-key="contact_title">제휴 문의</h2>
+            <form id="contactForm">
+                <div class="form-group">
+                    <label for="contactName" data-lang-key="contact_name">이름:</label>
+                    <input type="text" id="contactName" required>
+                </div>
+                <div class="form-group">
+                    <label for="contactEmail" data-lang-key="contact_email">이메일:</label>
+                    <input type="email" id="contactEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="contactCompany" data-lang-key="contact_company">회사명:</label>
+                    <input type="text" id="contactCompany">
+                </div>
+                <div class="form-group">
+                    <label for="contactMessage" data-lang-key="contact_message">문의 내용:</label>
+                    <textarea id="contactMessage" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="primary-button" data-lang-key="submit_button">제출</button>
             </form>
         </section>
-        <footer>
-            <p>&copy; 2026 MSDS Warning Generator. All rights reserved.</p>
-            <p data-translate-key="footer_text">Generated warnings are for informational purposes only and should not replace official MSDS/SDS documents.</p>
-        </footer>
-    </div>
+    </main>
+
+    <footer>
+        <p data-lang-key="footer_copyright">© 2026 MSDS Warning Generator. All rights reserved.</p>
+        <p class="disclaimer" data-lang-key="footer_disclaimer">생성된 경고는 정보 제공 목적으로만 사용되어야 하며, 공식 MSDS/SDS 문서를 대체할 수 없습니다.</p>
+    </footer>
+
     <script src="main.js"></script>
 </body>
 </html>
