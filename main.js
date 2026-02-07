@@ -34,7 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
             footer_disclaimer: "생성된 경고는 정보 제공 목적으로만 사용되어야 하며, 공식 MSDS/SDS 문서를 대체할 수 없습니다.",
             error_chemical_name_empty: "화학물질명을 입력해주세요.",
             error_api_no_result: "해당 화학물질을 찾을 수 없습니다. 철자를 확인하거나 다른 이름으로 시도해주세요.",
-            error_api_failed: "API에서 데이터를 가져오는 데 실패했습니다. 잠시 후 다시 시도해주세요.",
+            error_api_failed: "API에서 데이터를 가져오는 데 실패했습니다.",
+            error_cors_detailed: "<b>[개발자 정보]</b><br>브라우저의 보안 정책(CORS)으로 인해 API 요청이 차단된 것으로 보입니다. 이는 웹페이지에서 외부 API를 직접 호출할 때 발생하는 일반적인 문제입니다.<br><br><b>해결 제안:</b><br><ol style='text-align: left; margin-left: 20px;'><li>Visual Studio Code의 'Live Server' 확장 기능으로 프로젝트를 여세요.</li><li>브라우저 개발자 도구(F12)의 콘솔 탭에서 더 자세한 오류를 확인하세요.</li></ol>",
             loading_message: "화학물질 데이터를 불러오는 중...",
             signal_word_header: "신호어",
             hazard_statement_header: "유해·위험 문구",
@@ -61,7 +62,8 @@ document.addEventListener('DOMContentLoaded', () => {
             footer_disclaimer: "Generated warnings are for informational purposes only and should not replace official MSDS/SDS documents.",
             error_chemical_name_empty: "Please enter a chemical name.",
             error_api_no_result: "Could not find the chemical. Please check spelling or try another name.",
-            error_api_failed: "Failed to fetch data from the API. Please try again later.",
+            error_api_failed: "Failed to fetch data from the API.",
+            error_cors_detailed: "<b>[Developer Info]</b><br>The API request was likely blocked by the browser's security policy (CORS). This is common when calling an external API from a webpage.<br><br><b>Suggestions:</b><br><ol style='text-align: left; margin-left: 20px;'><li>Open this project with the 'Live Server' extension in Visual Studio Code.</li><li>Check the browser's developer console (F12) for more detailed errors.</li></ol>",
             loading_message: "Loading chemical data...",
             signal_word_header: "Signal Word",
             hazard_statement_header: "Hazard Statements",
@@ -135,11 +137,14 @@ document.addEventListener('DOMContentLoaded', () => {
             .filter(Boolean);
 
         const summaryItem = summaryXml.querySelector('item');
+        const hPhrasesText = summaryItem?.querySelector('hPhrase')?.textContent || '';
+        const pPhrasesText = summaryItem?.querySelector('pPhrase')?.textContent || '';
+
         return {
             pictograms,
             signalWord: summaryItem?.querySelector('signalWrd')?.textContent || '정보 없음',
-            hPhrases: summaryItem?.querySelector('hPhrase')?.innerHTML.split('&lt;br/&gt;').map(p => `<li>${p.trim()}</li>`).join('') || '<li>정보 없음</li>',
-            pPhrases: summaryItem?.querySelector('pPhrase')?.innerHTML.split('&lt;br/&gt;').map(p => `<li>${p.trim()}</li>`).join('') || '<li>정보 없음</li>',
+            hPhrases: hPhrasesText.split('<br/>').filter(p => p.trim()).map(p => `<li>${p.trim()}</li>`).join('') || '<li>정보 없음</li>',
+            pPhrases: pPhrasesText.split('<br/>').filter(p => p.trim()).map(p => `<li>${p.trim()}</li>`).join('') || '<li>정보 없음</li>',
         };
     };
 
@@ -192,7 +197,14 @@ document.addEventListener('DOMContentLoaded', () => {
             displayMessage(finalHtml);
         } catch (error) {
             console.error("Error during API fetch:", error);
-            displayMessage(`<p>${translations[currentLanguage].error_api_failed}</p>`, true);
+            let basicMessage = translations[currentLanguage].error_api_failed;
+            let detailedMessage = '';
+
+            if (error instanceof TypeError) { // Network errors, often CORS
+                detailedMessage = translations[currentLanguage].error_cors_detailed;
+            }
+            
+            displayMessage(`<p>${basicMessage}<br><br>${detailedMessage}</p>`, true);
         }
     });
 
