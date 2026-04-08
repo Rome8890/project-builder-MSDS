@@ -1,21 +1,27 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+'use client'
+
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/context/auth-context'
 import OnboardingForm from './onboarding-form'
 
-export default async function OnboardingPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+export default function OnboardingPage() {
+  const { user, profile, loading } = useAuth()
+  const router = useRouter()
 
-  if (!user) redirect('/auth/login')
+  useEffect(() => {
+    if (loading) return
+    if (!user) { router.replace('/auth/login'); return }
+    if (profile?.avatarUrl) router.replace('/create')
+  }, [user, profile, loading, router])
 
-  // 이미 셀카를 업로드한 사용자는 create로
-  const { data: profile } = await supabase
-    .from('users')
-    .select('avatar_url')
-    .eq('id', user.id)
-    .single()
-
-  if (profile?.avatar_url) redirect('/create')
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-purple-600/30 border-t-purple-600 rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
@@ -28,21 +34,18 @@ export default async function OnboardingPage() {
         </div>
 
         <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800">
-          <div className="mb-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-sm font-bold">1</div>
-              <div>
-                <p className="text-white font-medium">셀카 업로드</p>
-                <p className="text-gray-500 text-xs">AI가 당신의 얼굴을 미래 이미지에 합성합니다</p>
-              </div>
-            </div>
-            <div className="ml-11 p-3 bg-yellow-900/20 border border-yellow-700/40 rounded-lg text-yellow-300 text-xs leading-relaxed">
-              본인의 사진만 업로드하세요. 업로드된 셀카는 AI 이미지 생성에만 사용되며
-              본인 동의 없이 공개되지 않습니다.
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-sm font-bold text-white">1</div>
+            <div>
+              <p className="text-white font-medium">셀카 업로드</p>
+              <p className="text-gray-500 text-xs">AI가 당신의 얼굴을 미래 이미지에 합성합니다</p>
             </div>
           </div>
+          <div className="ml-11 mb-6 p-3 bg-yellow-900/20 border border-yellow-700/40 rounded-lg text-yellow-300 text-xs leading-relaxed">
+            본인의 사진만 업로드하세요. 셀카는 AI 이미지 생성에만 사용됩니다.
+          </div>
 
-          <OnboardingForm userId={user.id} />
+          <OnboardingForm uid={user.uid} />
         </div>
       </div>
     </div>

@@ -2,89 +2,60 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import Image from 'next/image'
+import { uploadSelfie } from '@/lib/firebase/storage'
+import { updateUserProfile } from '@/lib/firebase/firestore'
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+const MAX_SIZE = 5 * 1024 * 1024
+const ALLOWED = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
 
-export default function OnboardingForm({ userId }: { userId: string }) {
+export default function OnboardingForm({ uid }: { uid: string }) {
   const router = useRouter()
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const selected = e.target.files?.[0]
-    if (!selected) return
-
-    if (!ALLOWED_TYPES.includes(selected.type)) {
-      setError('JPG, PNG, WebP 파일만 업로드 가능합니다.')
-      return
-    }
-    if (selected.size > MAX_FILE_SIZE) {
-      setError('파일 크기는 5MB 이하여야 합니다.')
-      return
-    }
-
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]
+    if (!f) return
+    if (!ALLOWED.includes(f.type)) { setError('JPG, PNG, WebP만 가능합니다.'); return }
+    if (f.size > MAX_SIZE) { setError('파일 크기는 5MB 이하여야 합니다.'); return }
     setError(null)
-    setFile(selected)
-    setPreview(URL.createObjectURL(selected))
+    setFile(f)
+    setPreview(URL.createObjectURL(f))
   }
 
   async function handleUpload() {
     if (!file) return
     setUploading(true)
     setError(null)
-
-    const supabase = createClient()
-    const ext = file.name.split('.').pop()
-    const path = `${userId}/selfie.${ext}`
-
-    const { error: uploadError } = await supabase.storage
-      .from('selfies')
-      .upload(path, file, { upsert: true })
-
-    if (uploadError) {
-      setError('업로드 중 오류가 발생했습니다. 다시 시도해 주세요.')
+    try {
+      const downloadUrl = await uploadSelfie(uid, file)
+      await updateUserProfile(uid, { avatarUrl: downloadUrl })
+      router.push('/create')
+    } catch (err) {
+      console.error(err)
+      setError('업로드에 실패했습니다. 다시 시도해 주세요.')
+    } finally {
       setUploading(false)
-      return
     }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('selfies')
-      .getPublicUrl(path)
-
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ avatar_url: publicUrl })
-      .eq('id', userId)
-
-    if (updateError) {
-      setError('프로필 저장 중 오류가 발생했습니다.')
-      setUploading(false)
-      return
-    }
-
-    router.push('/create')
   }
 
   return (
     <div className="space-y-4">
-      {/* 업로드 영역 */}
       <div
-        onClick={() => fileInputRef.current?.click()}
-        className={`relative w-full aspect-square max-w-xs mx-auto rounded-2xl border-2 border-dashed cursor-pointer overflow-hidden transition-colors ${
-          preview ? 'border-purple-500' : 'border-gray-700 hover:border-gray-600'
+        onClick={() => fileRef.current?.click()}
+        className={`relative w-full max-w-xs mx-auto aspect-square rounded-2xl border-2 border-dashed cursor-pointer overflow-hidden transition-colors ${
+          preview ? 'border-purple-500' : 'border-gray-700 hover:border-purple-700'
         }`}
       >
         {preview ? (
           <Image src={preview} alt="셀카 미리보기" fill className="object-cover" />
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-gray-500">
-            <span className="text-4xl">📸</span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 gap-2">
+            <span className="text-5xl">📸</span>
             <p className="text-sm">클릭하여 셀카 선택</p>
             <p className="text-xs text-gray-600">JPG · PNG · WebP · 최대 5MB</p>
           </div>
@@ -92,16 +63,14 @@ export default function OnboardingForm({ userId }: { userId: string }) {
       </div>
 
       <input
-        ref={fileInputRef}
+        ref={fileRef}
         type="file"
         accept="image/jpeg,image/jpg,image/png,image/webp"
         className="hidden"
-        onChange={handleFileChange}
+        onChange={handleFile}
       />
 
-      {error && (
-        <p className="text-red-400 text-sm text-center">{error}</p>
-      )}
+      {error && <p className="text-red-400 text-sm text-center">{error}</p>}
 
       <button
         onClick={handleUpload}

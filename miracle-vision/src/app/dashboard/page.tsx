@@ -1,35 +1,44 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { signOut } from '@/lib/supabase/auth-actions'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useAuth } from '@/context/auth-context'
+import { signOut } from '@/lib/firebase/auth-actions'
+import { getUserVisions, VisionDoc } from '@/lib/firebase/firestore'
 
-export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+const FREE_DAILY_LIMIT = 3
 
-  if (!user) redirect('/auth/login')
+export default function DashboardPage() {
+  const { user, profile, loading } = useAuth()
+  const router = useRouter()
+  const [totalVisions, setTotalVisions] = useState(0)
 
-  const { data: profile } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+  useEffect(() => {
+    if (!loading && !user) router.replace('/auth/login')
+  }, [user, loading, router])
 
-  const { data: subscription } = await supabase
-    .from('subscriptions')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('status', 'active')
-    .order('started_at', { ascending: false })
-    .limit(1)
-    .single()
+  useEffect(() => {
+    if (user) {
+      getUserVisions(user.uid).then(visions => {
+        setTotalVisions(visions.filter((v: VisionDoc) => v.status === 'completed').length)
+      })
+    }
+  }, [user])
 
-  const { count: totalVisions } = await supabase
-    .from('visions')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
-    .eq('status', 'completed')
+  async function handleSignOut() {
+    await signOut()
+    router.push('/')
+  }
+
+  if (loading || !user || !profile) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-purple-600/30 border-t-purple-600 rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -49,19 +58,19 @@ export default async function DashboardPage() {
         {/* 프로필 */}
         <div className="p-6 bg-gray-900 rounded-2xl border border-gray-800 mb-4">
           <div className="flex items-center gap-4 mb-4">
-            {profile?.avatar_url ? (
+            {profile.avatarUrl ? (
               <div className="relative w-16 h-16 rounded-full overflow-hidden">
-                <Image src={profile.avatar_url} alt="프로필" fill className="object-cover" />
+                <Image src={profile.avatarUrl} alt="프로필" fill className="object-cover" />
               </div>
             ) : (
               <div className="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center text-2xl">👤</div>
             )}
             <div>
-              <p className="font-medium">{user.email}</p>
+              <p className="font-medium">{profile.email}</p>
               <p className="text-sm text-gray-400">
-                {profile?.plan === 'premium' ? (
-                  <span className="text-purple-400">✦ 프리미엄 플랜</span>
-                ) : '무료 플랜'}
+                {profile.plan === 'premium'
+                  ? <span className="text-purple-400">✦ 프리미엄 플랜</span>
+                  : '무료 플랜'}
               </p>
             </div>
           </div>
@@ -70,48 +79,23 @@ export default async function DashboardPage() {
             <div className="p-3 bg-gray-800 rounded-xl">
               <p className="text-xs text-gray-500 mb-1">오늘 생성 횟수</p>
               <p className="text-xl font-bold">
-                {profile?.daily_count ?? 0}
+                {profile.dailyCount}
                 <span className="text-sm text-gray-500 font-normal">
-                  {profile?.plan === 'free' ? '/3' : ' (무제한)'}
+                  {profile.plan === 'free' ? `/${FREE_DAILY_LIMIT}` : ' (무제한)'}
                 </span>
               </p>
             </div>
             <div className="p-3 bg-gray-800 rounded-xl">
               <p className="text-xs text-gray-500 mb-1">총 생성 수</p>
-              <p className="text-xl font-bold">{totalVisions ?? 0}<span className="text-sm text-gray-500 font-normal">개</span></p>
+              <p className="text-xl font-bold">{totalVisions}<span className="text-sm text-gray-500 font-normal">개</span></p>
             </div>
           </div>
-        </div>
-
-        {/* 구독 정보 */}
-        <div className="p-6 bg-gray-900 rounded-2xl border border-gray-800 mb-4">
-          <h2 className="font-semibold mb-3">구독 상태</h2>
-          {subscription ? (
-            <div>
-              <p className="text-purple-300 text-sm font-medium mb-1">✦ 프리미엄 활성</p>
-              <p className="text-gray-500 text-xs">
-                만료일: {new Date(subscription.expires_at).toLocaleDateString('ko-KR')}
-              </p>
-            </div>
-          ) : (
-            <div>
-              <p className="text-gray-400 text-sm mb-3">무료 플랜 사용 중</p>
-              <Link
-                href="/pricing"
-                className="inline-flex px-4 py-2 bg-purple-600 hover:bg-purple-500 text-sm font-medium rounded-lg transition-colors"
-              >
-                프리미엄 업그레이드
-              </Link>
-            </div>
-          )}
         </div>
 
         {/* 셀카 변경 */}
         <div className="p-6 bg-gray-900 rounded-2xl border border-gray-800 mb-4">
           <h2 className="font-semibold mb-2">셀카 변경</h2>
-          <p className="text-gray-500 text-sm mb-3">
-            새 셀카를 업로드하면 이후 생성되는 이미지에 반영됩니다.
-          </p>
+          <p className="text-gray-500 text-sm mb-3">새 셀카를 업로드하면 이후 생성 이미지에 반영됩니다.</p>
           <Link
             href="/onboarding"
             className="inline-flex px-4 py-2 border border-gray-700 hover:border-gray-500 text-sm text-gray-300 rounded-lg transition-colors"
@@ -120,15 +104,26 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
-        {/* 로그아웃 */}
-        <form action={signOut}>
-          <button
-            type="submit"
-            className="w-full py-3 border border-gray-800 hover:border-gray-700 text-gray-500 hover:text-gray-400 rounded-xl transition-colors text-sm"
-          >
-            로그아웃
-          </button>
-        </form>
+        {/* 구독 */}
+        {profile.plan === 'free' && (
+          <div className="p-6 bg-gray-900 rounded-2xl border border-gray-800 mb-4">
+            <h2 className="font-semibold mb-2">플랜 업그레이드</h2>
+            <p className="text-gray-500 text-sm mb-3">프리미엄으로 매일 무제한 생성하세요.</p>
+            <Link
+              href="/pricing"
+              className="inline-flex px-4 py-2 bg-purple-600 hover:bg-purple-500 text-sm font-medium text-white rounded-lg transition-colors"
+            >
+              프리미엄 업그레이드
+            </Link>
+          </div>
+        )}
+
+        <button
+          onClick={handleSignOut}
+          className="w-full py-3 border border-gray-800 hover:border-gray-700 text-gray-500 hover:text-gray-400 rounded-xl transition-colors text-sm"
+        >
+          로그아웃
+        </button>
       </div>
     </div>
   )

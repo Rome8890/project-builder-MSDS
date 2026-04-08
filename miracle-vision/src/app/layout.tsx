@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
 import './globals.css'
+import { AuthProvider } from '@/context/auth-context'
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -16,7 +17,7 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: '미라클비전 — AI 비전보드 생성기',
   description: '셀카 한 장과 목표 한 줄로 AI가 당신의 꿈을 이룬 미래 이미지를 만들어 드립니다.',
-  keywords: ['비전보드', 'AI 이미지', '목표 달성', '미라클모닝', '비전보드 만들기'],
+  keywords: ['비전보드', 'AI 이미지', '목표 달성', '미라클모닝'],
   openGraph: {
     title: '미라클비전 — AI 비전보드 생성기',
     description: '셀카 한 장과 목표 한 줄로 AI가 당신의 꿈을 이룬 미래 이미지를 만들어 드립니다.',
@@ -29,7 +30,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black`}>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   )
