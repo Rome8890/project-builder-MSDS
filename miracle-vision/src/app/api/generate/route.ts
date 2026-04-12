@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+// Vercel 함수 최대 실행 시간 (Pro: 300, Hobby: 60)
+export const maxDuration = 60
+
 const FREE_LIMIT = 3
 
 export async function POST(request: NextRequest) {
@@ -12,7 +15,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
   }
 
-  const { prompt, userId } = await request.json()
+  const body = await request.json()
+  const { prompt, userId } = body
 
   if (!prompt?.trim()) {
     return NextResponse.json({ error: '목표를 입력해 주세요.' }, { status: 400 })
@@ -22,37 +26,38 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createAdminClient()
+  const today = new Date().toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul' })
+    .replace(/\. /g, '-').replace('.', '')
 
   // 프로필 조회
-  const { data: profile } = await admin
+  const { data: profile, error: profileErr } = await admin
     .from('users')
-    .select('plan, daily_count, avatar_url')
+    .select('plan, daily_count, daily_reset_at, avatar_url')
     .eq('id', user.id)
     .single()
 
-  if (!profile?.avatar_url) {
+  if (profileErr || !profile) {
+    return NextResponse.json({ error: '프로필을 찾을 수 없습니다.' }, { status: 404 })
+  }
+  if (!profile.avatar_url) {
     return NextResponse.json({ error: '셀카를 먼저 업로드해 주세요.' }, { status: 400 })
   }
 
   // 일일 횟수 초기화 (날짜가 바뀐 경우)
-  const today = new Date().toISOString().slice(0, 10)
-  const { data: lastReset } = await admin
-    .from('users')
-    .select('daily_reset_at')
-    .eq('id', user.id)
-    .single()
-
   let currentCount = profile.daily_count
-  if (lastReset?.daily_reset_at !== today) {
+  if (profile.daily_reset_at !== today) {
     currentCount = 0
     await admin.from('users').update({ daily_count: 0, daily_reset_at: today }).eq('id', user.id)
   }
 
   if (profile.plan === 'free' && currentCount >= FREE_LIMIT) {
-    return NextResponse.json({ error: '오늘 무료 생성 횟수를 모두 사용했습니다.' }, { status: 429 })
+    return NextResponse.json(
+      { error: '오늘 무료 생성 횟수(3회)를 모두 사용했습니다.' },
+      { status: 429 }
+    )
   }
 
-  // vision 레코드 생성
+  // vision 레코드 생성 (processing 상태)
   const { data: vision, error: visionErr } = await admin
     .from('visions')
     .insert({ user_id: user.id, prompt: prompt.trim(), status: 'processing' })
@@ -66,75 +71,121 @@ export async function POST(request: NextRequest) {
   // 횟수 증가
   await admin.from('users').update({ daily_count: currentCount + 1 }).eq('id', user.id)
 
-  // 비동기 이미지 생성
-  generateImageAsync(vision.id, prompt.trim(), profile.avatar_url, user.id)
+  // ============================================================
+  // 이미지 생성 — 동기식 (Vercel 함수가 살아있는 동안 완료)
+  // ============================================================
+  const imageUrl = await generateImage(prompt.trim(), profile.avatar_url)
+
+  if (imageUrl) {
+    // Storage에 저장
+    const stored = await saveToStorage(admin, imageUrl, user.id, vision.id)
+    const finalUrl = stored ?? imageUrl
+
+    await admin.from('visions')
+      .update({ image_url: finalUrl, status: 'completed' })
+      .eq('id', vision.id)
+  } else {
+    await admin.from('visions').update({ status: 'failed' }).eq('id', vision.id)
+  }
 
   return NextResponse.json({ visionId: vision.id })
 }
 
-async function generateImageAsync(
-  visionId: string,
-  prompt: string,
-  avatarUrl: string,
-  userId: string
-) {
-  const admin = createAdminClient()
+// ── Flux 이미지 생성 ──────────────────────────────────────────
+async function generateImage(prompt: string, avatarUrl: string): Promise<string | null> {
+  const apiKey = process.env.FLUX_API_KEY
+
+  // DEMO MODE: API 키 없을 때 더미 이미지 반환 (테스트용)
+  if (!apiKey) {
+    console.warn('[generate] FLUX_API_KEY not set — using demo placeholder')
+    await new Promise(r => setTimeout(r, 2000)) // 2초 딜레이 (생성 흉내)
+    return `https://picsum.photos/seed/${Date.now()}/1024/1024`
+  }
 
   try {
-    const apiKey = process.env.FLUX_API_KEY
-    if (!apiKey) throw new Error('FLUX_API_KEY not configured')
-
-    // Flux Pro 1.1 Ultra 호출
-    const fluxRes = await fetch('https://api.bfl.ml/v1/flux-pro-1.1-ultra', {
+    // Flux Pro 1.1 Ultra 요청
+    const submitRes = await fetch('https://api.bfl.ml/v1/flux-pro-1.1-ultra', {
       method: 'POST',
       headers: { 'X-Key': apiKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        prompt: `Photorealistic portrait: a person who has successfully achieved their dream of "${prompt}".
-Confident, happy expression. Cinematic lighting, professional photography, 8K quality.
-The person matches the reference photo provided.`,
+        prompt: `Photorealistic portrait: A confident, successful person who has achieved: "${prompt}".
+Warm cinematic lighting, professional photography, sharp focus. 8K resolution.
+Based on the person in the reference image.`,
         image_prompt: avatarUrl,
         width: 1024,
         height: 1024,
         output_format: 'jpeg',
         safety_tolerance: 2,
+        seed: Math.floor(Math.random() * 999999),
       }),
     })
 
-    if (!fluxRes.ok) throw new Error(`Flux API error: ${fluxRes.status}`)
-    const { id: requestId } = await fluxRes.json()
-
-    // 폴링 (최대 90초)
-    let imageUrl: string | null = null
-    for (let i = 0; i < 30; i++) {
-      await new Promise(r => setTimeout(r, 3000))
-      const poll = await fetch(`https://api.bfl.ml/v1/get_result?id=${requestId}`, {
-        headers: { 'X-Key': apiKey },
-      })
-      const pollData = await poll.json()
-      if (pollData.status === 'Ready' && pollData.result?.sample) {
-        imageUrl = pollData.result.sample; break
-      }
-      if (pollData.status === 'Error') throw new Error('Generation failed')
+    if (!submitRes.ok) {
+      const errText = await submitRes.text()
+      console.error('[flux] submit error:', submitRes.status, errText)
+      return null
     }
 
-    if (!imageUrl) throw new Error('Generation timeout')
+    const { id: requestId } = await submitRes.json()
+    if (!requestId) return null
 
-    // Supabase Storage에 저장
-    const imgRes = await fetch(imageUrl)
-    const imgBlob = await imgRes.blob()
-    const storagePath = `${userId}/${visionId}.jpg`
+    // 폴링 (최대 55초 — Vercel 60초 limit 여유 5초 확보)
+    const deadline = Date.now() + 55_000
+    while (Date.now() < deadline) {
+      await new Promise(r => setTimeout(r, 3000))
 
-    const { error: storageErr } = await admin.storage
-      .from('visions')
-      .upload(storagePath, imgBlob, { contentType: 'image/jpeg', upsert: true })
+      const pollRes = await fetch(`https://api.bfl.ml/v1/get_result?id=${requestId}`, {
+        headers: { 'X-Key': apiKey },
+      })
 
-    if (storageErr) throw storageErr
+      if (!pollRes.ok) continue
 
-    const { data: { publicUrl } } = admin.storage.from('visions').getPublicUrl(storagePath)
+      const poll = await pollRes.json()
 
-    await admin.from('visions').update({ image_url: publicUrl, status: 'completed' }).eq('id', visionId)
+      if (poll.status === 'Ready' && poll.result?.sample) {
+        return poll.result.sample as string
+      }
+      if (poll.status === 'Error') {
+        console.error('[flux] generation error:', poll)
+        return null
+      }
+    }
+
+    console.error('[flux] timeout')
+    return null
   } catch (err) {
-    console.error('[generate]', err)
-    await admin.from('visions').update({ status: 'failed' }).eq('id', visionId)
+    console.error('[flux] exception:', err)
+    return null
+  }
+}
+
+// ── Supabase Storage에 이미지 저장 ──────────────────────────
+async function saveToStorage(
+  admin: ReturnType<typeof createAdminClient>,
+  imageUrl: string,
+  uid: string,
+  visionId: string
+): Promise<string | null> {
+  try {
+    const res = await fetch(imageUrl)
+    if (!res.ok) return null
+
+    const blob = await res.blob()
+    const path = `${uid}/${visionId}.jpg`
+
+    const { error } = await admin.storage
+      .from('visions')
+      .upload(path, blob, { contentType: 'image/jpeg', upsert: true })
+
+    if (error) {
+      console.error('[storage] upload error:', error)
+      return imageUrl // 원본 URL 폴백
+    }
+
+    const { data: { publicUrl } } = admin.storage.from('visions').getPublicUrl(path)
+    return publicUrl
+  } catch (err) {
+    console.error('[storage] exception:', err)
+    return imageUrl // 원본 URL 폴백
   }
 }
