@@ -4,22 +4,20 @@ import { createClient } from '@/lib/supabase/server'
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/create'
-  const error = searchParams.get('error')
-  const errorDescription = searchParams.get('error_description')
+  const errorParam = searchParams.get('error')
+  const errorDesc = searchParams.get('error_description')
 
-  if (error) {
-    const errorUrl = new URL('/auth/login', origin)
-    errorUrl.searchParams.set('error', errorDescription ?? error)
-    return NextResponse.redirect(errorUrl)
+  if (errorParam) {
+    return NextResponse.redirect(
+      new URL(`/auth/login?error=${encodeURIComponent(errorDesc ?? errorParam)}`, origin)
+    )
   }
 
   if (code) {
     const supabase = await createClient()
-    const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (!exchangeError) {
-      // 신규 가입 시 온보딩으로, 기존 사용자는 create로
+    if (!error) {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         const { data: profile } = await supabase
@@ -28,17 +26,13 @@ export async function GET(request: Request) {
           .eq('id', user.id)
           .single()
 
-        const redirectTo = !profile?.avatar_url ? '/onboarding' : next
+        const redirectTo = !profile?.avatar_url ? '/onboarding' : '/create'
         const forwardedHost = request.headers.get('x-forwarded-host')
-        const isLocalEnv = process.env.NODE_ENV === 'development'
 
-        if (isLocalEnv) {
-          return NextResponse.redirect(`${origin}${redirectTo}`)
-        } else if (forwardedHost) {
+        if (forwardedHost) {
           return NextResponse.redirect(`https://${forwardedHost}${redirectTo}`)
-        } else {
-          return NextResponse.redirect(`${origin}${redirectTo}`)
         }
+        return NextResponse.redirect(`${origin}${redirectTo}`)
       }
     }
   }

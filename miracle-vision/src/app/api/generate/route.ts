@@ -1,100 +1,98 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { adminAuth, adminDb, adminStorage } from '@/lib/firebase/admin'
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
-const FREE_DAILY_LIMIT = 3
+const FREE_LIMIT = 3
 
 export async function POST(request: NextRequest) {
-  // Firebase ID 토큰으로 인증 확인
-  const authorization = request.headers.get('authorization')
-  if (!authorization?.startsWith('Bearer ')) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) {
     return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
   }
 
-  let uid: string
-  try {
-    const token = authorization.split('Bearer ')[1]
-    const decoded = await adminAuth.verifyIdToken(token)
-    uid = decoded.uid
-  } catch {
-    return NextResponse.json({ error: '인증이 만료되었습니다.' }, { status: 401 })
-  }
+  const { prompt, userId } = await request.json()
 
-  const { prompt } = await request.json()
   if (!prompt?.trim()) {
     return NextResponse.json({ error: '목표를 입력해 주세요.' }, { status: 400 })
   }
-
-  // 사용자 프로필 조회
-  const userRef = adminDb.collection('users').doc(uid)
-  const userSnap = await userRef.get()
-  if (!userSnap.exists) {
-    return NextResponse.json({ error: '프로필을 찾을 수 없습니다.' }, { status: 404 })
+  if (user.id !== userId) {
+    return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
   }
 
-  const profile = userSnap.data()!
-  if (!profile.avatarUrl) {
+  const admin = createAdminClient()
+
+  // 프로필 조회
+  const { data: profile } = await admin
+    .from('users')
+    .select('plan, daily_count, avatar_url')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.avatar_url) {
     return NextResponse.json({ error: '셀카를 먼저 업로드해 주세요.' }, { status: 400 })
   }
 
-  // 일일 횟수 초기화 (날짜 변경 시)
+  // 일일 횟수 초기화 (날짜가 바뀐 경우)
   const today = new Date().toISOString().slice(0, 10)
-  let dailyCount = profile.dailyCount ?? 0
-  if (profile.dailyResetAt !== today) {
-    dailyCount = 0
-    await userRef.update({ dailyCount: 0, dailyResetAt: today })
+  const { data: lastReset } = await admin
+    .from('users')
+    .select('daily_reset_at')
+    .eq('id', user.id)
+    .single()
+
+  let currentCount = profile.daily_count
+  if (lastReset?.daily_reset_at !== today) {
+    currentCount = 0
+    await admin.from('users').update({ daily_count: 0, daily_reset_at: today }).eq('id', user.id)
   }
 
-  if (profile.plan === 'free' && dailyCount >= FREE_DAILY_LIMIT) {
-    return NextResponse.json(
-      { error: '오늘 무료 생성 횟수를 모두 사용했습니다.' },
-      { status: 429 }
-    )
+  if (profile.plan === 'free' && currentCount >= FREE_LIMIT) {
+    return NextResponse.json({ error: '오늘 무료 생성 횟수를 모두 사용했습니다.' }, { status: 429 })
   }
 
-  // vision 문서 생성 (processing 상태)
-  const visionRef = await adminDb.collection('visions').add({
-    userId: uid,
-    prompt: prompt.trim(),
-    imageUrl: null,
-    status: 'processing',
-    isPublic: false,
-    createdAt: new Date(),
-  })
-  const visionId = visionRef.id
+  // vision 레코드 생성
+  const { data: vision, error: visionErr } = await admin
+    .from('visions')
+    .insert({ user_id: user.id, prompt: prompt.trim(), status: 'processing' })
+    .select()
+    .single()
 
-  // daily_count 증가
-  await userRef.update({ dailyCount: dailyCount + 1 })
+  if (visionErr || !vision) {
+    return NextResponse.json({ error: '생성 기록 저장 실패' }, { status: 500 })
+  }
 
-  // 비동기 이미지 생성 (응답 먼저 반환)
-  generateImageAsync(visionId, prompt.trim(), profile.avatarUrl, uid)
+  // 횟수 증가
+  await admin.from('users').update({ daily_count: currentCount + 1 }).eq('id', user.id)
 
-  return NextResponse.json({ visionId })
+  // 비동기 이미지 생성
+  generateImageAsync(vision.id, prompt.trim(), profile.avatar_url, user.id)
+
+  return NextResponse.json({ visionId: vision.id })
 }
 
 async function generateImageAsync(
   visionId: string,
   prompt: string,
   avatarUrl: string,
-  uid: string
+  userId: string
 ) {
-  const visionRef = adminDb.collection('visions').doc(visionId)
+  const admin = createAdminClient()
 
   try {
-    const fluxApiKey = process.env.FLUX_API_KEY
-    if (!fluxApiKey) throw new Error('FLUX_API_KEY not set')
+    const apiKey = process.env.FLUX_API_KEY
+    if (!apiKey) throw new Error('FLUX_API_KEY not configured')
 
-    // Flux 1.1 Ultra API 호출
+    // Flux Pro 1.1 Ultra 호출
     const fluxRes = await fetch('https://api.bfl.ml/v1/flux-pro-1.1-ultra', {
       method: 'POST',
-      headers: {
-        'X-Key': fluxApiKey,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'X-Key': apiKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        prompt: `Photorealistic portrait of a person who has successfully achieved: "${prompt}".
-Happy, confident expression. Professional photography, cinematic lighting, 8K quality.
-The person looks exactly like the reference photo.`,
-        image_prompt: avatarUrl,   // 셀카 IP-Adapter 기반 참조
+        prompt: `Photorealistic portrait: a person who has successfully achieved their dream of "${prompt}".
+Confident, happy expression. Cinematic lighting, professional photography, 8K quality.
+The person matches the reference photo provided.`,
+        image_prompt: avatarUrl,
         width: 1024,
         height: 1024,
         output_format: 'jpeg',
@@ -102,7 +100,7 @@ The person looks exactly like the reference photo.`,
       }),
     })
 
-    if (!fluxRes.ok) throw new Error(`Flux API ${fluxRes.status}`)
+    if (!fluxRes.ok) throw new Error(`Flux API error: ${fluxRes.status}`)
     const { id: requestId } = await fluxRes.json()
 
     // 폴링 (최대 90초)
@@ -110,34 +108,33 @@ The person looks exactly like the reference photo.`,
     for (let i = 0; i < 30; i++) {
       await new Promise(r => setTimeout(r, 3000))
       const poll = await fetch(`https://api.bfl.ml/v1/get_result?id=${requestId}`, {
-        headers: { 'X-Key': fluxApiKey },
+        headers: { 'X-Key': apiKey },
       })
       const pollData = await poll.json()
-
       if (pollData.status === 'Ready' && pollData.result?.sample) {
-        imageUrl = pollData.result.sample
-        break
+        imageUrl = pollData.result.sample; break
       }
-      if (pollData.status === 'Error') throw new Error('Flux generation failed')
+      if (pollData.status === 'Error') throw new Error('Generation failed')
     }
 
     if (!imageUrl) throw new Error('Generation timeout')
 
-    // Firebase Storage에 저장
+    // Supabase Storage에 저장
     const imgRes = await fetch(imageUrl)
-    const imgBuffer = Buffer.from(await imgRes.arrayBuffer())
-    const bucket = adminStorage.bucket()
-    const filePath = `visions/${uid}/${visionId}.jpg`
-    const file = bucket.file(filePath)
+    const imgBlob = await imgRes.blob()
+    const storagePath = `${userId}/${visionId}.jpg`
 
-    await file.save(imgBuffer, { contentType: 'image/jpeg' })
-    await file.makePublic()
+    const { error: storageErr } = await admin.storage
+      .from('visions')
+      .upload(storagePath, imgBlob, { contentType: 'image/jpeg', upsert: true })
 
-    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${filePath}`
+    if (storageErr) throw storageErr
 
-    await visionRef.update({ imageUrl: publicUrl, status: 'completed' })
+    const { data: { publicUrl } } = admin.storage.from('visions').getPublicUrl(storagePath)
+
+    await admin.from('visions').update({ image_url: publicUrl, status: 'completed' }).eq('id', visionId)
   } catch (err) {
-    console.error('[generate] error:', err)
-    await visionRef.update({ status: 'failed' })
+    console.error('[generate]', err)
+    await admin.from('visions').update({ status: 'failed' }).eq('id', visionId)
   }
 }

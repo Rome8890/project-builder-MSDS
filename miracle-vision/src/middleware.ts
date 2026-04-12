@@ -1,5 +1,45 @@
-// Firebase Auth는 클라이언트 사이드에서 처리됩니다.
-// 각 페이지의 useAuth() 훅으로 인증 상태를 확인합니다.
-// 서버 사이드 보호가 필요한 API Routes는 Authorization 헤더로 Firebase ID 토큰을 검증합니다.
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
-export { }
+const PROTECTED = ['/onboarding', '/create', '/result', '/history', '/dashboard']
+
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({ request })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => request.cookies.getAll(),
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          response = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  const { data: { user } } = await supabase.auth.getUser()
+  const { pathname } = request.nextUrl
+
+  const isProtected = PROTECTED.some(p => pathname.startsWith(p))
+  if (isProtected && !user) {
+    const url = new URL('/auth/login', request.url)
+    url.searchParams.set('redirect', pathname)
+    return NextResponse.redirect(url)
+  }
+
+  if (user && (pathname === '/auth/login' || pathname === '/auth/signup')) {
+    return NextResponse.redirect(new URL('/create', request.url))
+  }
+
+  return response
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+}

@@ -1,27 +1,21 @@
-'use client'
-
-import { use } from 'react'
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/context/auth-context'
+import { createClient } from '@/lib/supabase/server'
+import { redirect, notFound } from 'next/navigation'
 import ResultView from './result-view'
 
-export default function ResultPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
-  const { user, loading } = useAuth()
-  const router = useRouter()
+export default async function ResultPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/auth/login')
 
-  useEffect(() => {
-    if (!loading && !user) router.replace('/auth/login')
-  }, [user, loading, router])
+  const { data: vision } = await supabase
+    .from('visions')
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single()
 
-  if (loading || !user) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-purple-600/30 border-t-purple-600 rounded-full animate-spin" />
-      </div>
-    )
-  }
+  if (!vision) notFound()
 
-  return <ResultView visionId={id} />
+  return <ResultView vision={vision} />
 }
